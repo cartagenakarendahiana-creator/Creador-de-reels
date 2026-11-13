@@ -214,6 +214,7 @@ a{color:var(--acc2)}
       <div class="card">
         <h3>✦ Edición automática</h3>
         <p class="sub">Escucha la voz, quita silencios y tomas repetidas, y crea subtítulos sincronizados.</p>
+        <p class="note" id="aiBadge" style="margin-top:-6px;color:var(--acc2)"></p>
         <div class="seg2" id="srcSeg">
           <button data-src="video">🎥 Mi voz del video</button>
           <button data-src="voz">🎙️ Voz ElevenLabs</button>
@@ -233,6 +234,7 @@ a{color:var(--acc2)}
           <div class="field"><span>Aire antes/después</span><input type="range" id="pad" min="0" max="0.4" step="0.01"><output id="padO"></output></div>
           <div class="field"><span>Filtro de ruido</span><input type="range" id="sens" min="0.15" max="0.55" step="0.01"><output id="sensO"></output></div>
           <div class="field"><span>Palabras por subtítulo</span><input type="range" id="autoWpc" min="1" max="8" step="1"><output id="autoWpcO"></output></div>
+          <div id="engineRow" class="hidden"><div class="label">Motor de voz</div><div class="chips" id="engineChips"></div></div>
         </details>
         <button class="btn acc big" id="analyzeBtn" style="margin-top:10px">✦ Editar automáticamente</button>
         <p class="note">La primera vez descarga el modelo de voz (~65 MB, mejor con wifi). Todo corre en tu celular.</p>
@@ -393,6 +395,7 @@ a{color:var(--acc2)}
           </div>
         </div>
         <div class="label">2 · Guion</div>
+        <div class="row hidden" id="aiScriptRow" style="margin-bottom:8px;flex-wrap:nowrap"><input class="txtin" id="aiTopic" placeholder="Tema: ej. 3 errores al comprar muebles"><button class="btn" id="aiScriptBtn" style="flex:0 0 auto">✦ Escribir con IA</button></div>
         <textarea class="script" id="animScript" placeholder="Escribe o pega tu guion. Cada frase será una escena."></textarea>
         <div class="label">3 · Voz (opcional)</div>
         <p class="note" style="margin-top:0">Carga tu voz de ElevenLabs en <b>Audio</b> y el video se sincroniza con ella. Sin voz, el texto avanza a ritmo de lectura.</p>
@@ -455,6 +458,7 @@ a{color:var(--acc2)}
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="firebase-config.js"></script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
@@ -501,7 +505,7 @@ let S = {
   music: {vol:0.15, start:0, offset:0, fadeIn:1, fadeOut:2, loop:true, duck:true},
   videoVol: 1, voiceVol: 1,
   script: '', src: 'video',
-  auto: {silence:true, takes:true, subs:true, ai:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3},
+  auto: {silence:true, takes:true, subs:true, ai:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3, engine:'gemini'},
   edit: {zoom:'cortes', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
   anim: {theme:'violeta', cartoon:'caricatura', zoom:1.2, y:0, script:'', ai:true},
 };
@@ -515,6 +519,7 @@ try {
 } catch(e){}
 if (!FONTS[S.style.font]) S.style.font = 'Montserrat';
 if (!FORMATS[S.edit.format]) S.edit.format = '9:16';
+if (S.anim.cartoon === 'ia') S.anim.cartoon = 'caricatura';
 let saveT; function persist(){ clearTimeout(saveT); saveT = setTimeout(()=>{ try{ localStorage.setItem('editorReels.v4', JSON.stringify(S)); }catch(e){} }, 300); }
 let uid = Date.now(); const newId = () => ++uid;
 S.cues.forEach(c => c.id = c.id || newId());
@@ -1187,20 +1192,35 @@ function buildSegs(keepRanges, D, speech, asrWords, reason){
   if (t < D) pushCut(t, D);
   return out;
 }
-async function runASR(x16, speechRaw, D, pfx, label){
-  setStatus(pfx, 'Preparando el reconocimiento de voz…', 'La primera vez descarga el modelo (~65 MB).', 0.1);
-  await loadModel((p, got) => setStatus(pfx, 'Descargando el modelo de voz…', `${(got/1e6).toFixed(0)} MB de ~66 MB · solo la primera vez`, 0.1 + p*0.2));
+function asrChunks(speechRaw, D){
   const regs = mergeRegs(speechRaw, 0.45), chunks = [];
   regs.forEach(r => { if (r[1] - r[0] > 26) { for (let a = r[0]; a < r[1]; a += 24) chunks.push([a, Math.min(r[1], a + 24)]); return; }
     const last = chunks[chunks.length-1]; if (last && r[1] - last[1] < 0.2 && r[1] - last[0] <= 24) last[1] = r[1]; else chunks.push([r[0], r[1]]); });
-  const words = [], fullTxt = [];
-  for (let k = 0; k < chunks.length; k++) {
-    const a = Math.max(0, chunks[k][0] - 0.2), b = Math.min(D, chunks[k][1] + 0.2);
-    setStatus(pfx, label, `Parte ${k+1} de ${chunks.length} · ${fmtShort(a)}–${fmtShort(b)}`, 0.3 + 0.6 * (k / chunks.length));
-    const out = await transcribe(x16.slice(Math.floor(a*16000), Math.floor(b*16000)), b - a);
-    const parts = (out.chunks && out.chunks.length) ? out.chunks : [{timestamp:[0, b-a], text: out.text || ''}];
-    parts.forEach(p => { const s0 = a + (p.timestamp[0] ?? 0), e0 = a + (p.timestamp[1] ?? (b - a)); const txt = cleanRepeats(p.text || ''); if (!norm(txt)) return;
-      fullTxt.push(`[${fmtShort(s0)}] ${txt}`); words.push(...placeWords(txt, Math.max(a, s0), Math.min(b, Math.max(e0, s0 + 0.2)), speechRaw)); });
+  return chunks.map(c => [Math.max(0, c[0] - 0.2), Math.min(D, c[1] + 0.2)]);
+}
+async function runASR(x16, speechRaw, D, pfx, label){
+  const chunks = asrChunks(speechRaw, D), words = [], fullTxt = [];
+  const addText = (txt, a, b, s0, e0) => { txt = cleanRepeats(txt || ''); if (!norm(txt)) return; fullTxt.push(`[${fmtShort(s0)}] ${txt}`); words.push(...placeWords(txt, Math.max(a, s0), Math.min(b, Math.max(e0, s0 + 0.2)), speechRaw)); };
+  let done = false;
+  if (AI.transcribe && S.auto.engine !== 'local') {
+    try {
+      setStatus(pfx, '✦ Gemini está escuchando…', `${chunks.length} frases detectadas`, 0.35);
+      const texts = await AI.transcribe(chunks.map(([a, b]) => x16.slice(Math.floor(a*16000), Math.floor(b*16000))));
+      chunks.forEach(([a, b], k) => addText(texts[k], a, b, a, b));
+      done = words.length > 0;
+      if (!done) throw new Error('Gemini no devolvió texto');
+    } catch(e) { console.warn('Gemini falló, uso el modelo local', e); words.length = 0; fullTxt.length = 0; toast('Gemini no respondió; uso el reconocimiento del celular', 3000); }
+  }
+  if (!done) {
+    setStatus(pfx, 'Preparando el reconocimiento de voz…', 'La primera vez descarga el modelo (~65 MB).', 0.1);
+    await loadModel((p, got) => setStatus(pfx, 'Descargando el modelo de voz…', `${(got/1e6).toFixed(0)} MB de ~66 MB · solo la primera vez`, 0.1 + p*0.2));
+    for (let k = 0; k < chunks.length; k++) {
+      const [a, b] = chunks[k];
+      setStatus(pfx, label, `Parte ${k+1} de ${chunks.length} · ${fmtShort(a)}–${fmtShort(b)}`, 0.3 + 0.6 * (k / chunks.length));
+      const out = await transcribe(x16.slice(Math.floor(a*16000), Math.floor(b*16000)), b - a);
+      const parts = (out.chunks && out.chunks.length) ? out.chunks : [{timestamp:[0, b-a], text: out.text || ''}];
+      parts.forEach(p => addText(p.text, a, b, a + (p.timestamp[0] ?? 0), a + (p.timestamp[1] ?? (b - a))));
+    }
   }
   words.sort((p, q) => p.start - q.start);
   $('transcript').textContent = fullTxt.join('\n') || '(no se entendieron palabras)'; $('transcriptBox').classList.remove('hidden');
@@ -1298,16 +1318,76 @@ $('toggleHereBtn').onclick = () => { if (mode !== 'video' || !segs.length) retur
 $('resetCutsBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { resetSegs(); renderSegs(); buildTimeline(); });
 
 // ================= ✦ IA (Claude) =================
-let sampleFn = null;
-(async () => { try { if (window.claude && window.claude.use) sampleFn = await window.claude.use('sample'); } catch(e){} if (!sampleFn) { $('optAI').closest('label').classList.add('hidden'); $('animAI').closest('label').classList.add('hidden'); } })();
+let sampleFn = null; const AI = {kind: null};
+function parseJSON(t){ try { return JSON.parse(t); } catch(e) {} const m = String(t).match(/[\[{][\s\S]*[\]}]/); if (m) return JSON.parse(m[0]); throw new Error('Respuesta no válida de la IA'); }
+function wavB64(f){
+  const n = f.length, buf = new ArrayBuffer(44 + n*2), v = new DataView(buf); const w = (o, str) => { for (let i=0;i<str.length;i++) v.setUint8(o+i, str.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36 + n*2, true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,16000,true); v.setUint32(28,32000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40, n*2, true);
+  for (let i=0;i<n;i++){ const x = Math.max(-1, Math.min(1, f[i])); v.setInt16(44 + i*2, x < 0 ? x*0x8000 : x*0x7fff, true); }
+  const u = new Uint8Array(buf); let bin = ''; for (let i=0;i<u.length;i+=0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i+0x8000)); return btoa(bin);
+}
+async function initAI(){
+  try { if (window.claude && window.claude.use) sampleFn = await window.claude.use('sample'); } catch(e){}
+  if (window.__AI_MOCK) Object.assign(AI, window.__AI_MOCK);
+  else if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
+    try {
+      const m = await import('./lib/firebase-ai.js');
+      const app = m.initializeApp(window.FIREBASE_CONFIG), ai = m.getAI(app, {backend: new m.GoogleAIBackend()});
+      const M = window.AI_MODELS || {}, tm = M.text || 'gemini-3.6-flash', im = M.image || 'gemini-3.1-flash-image';
+      const jsonModel = m.getGenerativeModel(ai, {model: tm, generationConfig: {responseMimeType: 'application/json'}});
+      const textModel = m.getGenerativeModel(ai, {model: tm});
+      const imgModel = m.getGenerativeModel(ai, {model: im, generationConfig: {responseModalities: [m.ResponseModality.TEXT, m.ResponseModality.IMAGE]}});
+      AI.kind = 'gemini';
+      AI.json = async parts => parseJSON((await jsonModel.generateContent(parts)).response.text());
+      AI.text = async prompt => (await textModel.generateContent(prompt)).response.text();
+      AI.image = async parts => { const r = await imgModel.generateContent(parts); const ps = (r.response.candidates && r.response.candidates[0] && r.response.candidates[0].content.parts) || []; const p = ps.find(x => x.inlineData); if (!p) throw new Error('La IA no devolvió una imagen'); return p.inlineData; };
+    } catch(e) { console.warn('Firebase AI no disponible', e); }
+  }
+  if (!AI.kind && sampleFn) {
+    AI.kind = 'claude';
+    AI.json = async parts => sampleFn.json(typeof parts === 'string' ? parts : parts.filter(p => typeof p === 'string').join('\n'), {modelTier: 'quick'});
+    AI.text = async prompt => (await sampleFn(prompt, {modelTier: 'quick', cache: false})).text;
+  }
+  if (AI.json && !AI.transcribe && AI.kind === 'gemini') AI.transcribe = async clips => {
+    const out = []; let batch = [], size = 0;
+    const flush = async () => {
+      if (!batch.length) return;
+      const parts = [`Transcribe en español, palabra por palabra, cada uno de los ${batch.length} audios adjuntos, en el mismo orden. No corrijas, no resumas y no inventes: si la persona repite una frase o se equivoca, escribe también la repetición tal cual. Usa puntuación normal. Si un audio no tiene voz, pon "". Responde SOLO con JSON: {"t": [exactamente ${batch.length} textos]}`];
+      batch.forEach(b => parts.push({inlineData: {mimeType: 'audio/wav', data: b}}));
+      const r = await AI.json(parts), arr = Array.isArray(r) ? r : (r && r.t) || [];
+      for (let i = 0; i < batch.length; i++) out.push(String(arr[i] || ''));
+      batch = []; size = 0;
+    };
+    for (const c of clips) { const b64 = wavB64(c); if (batch.length && (size + b64.length > 14e6 || batch.length >= 25)) await flush(); batch.push(b64); size += b64.length; }
+    await flush(); return out;
+  };
+  updateAIUI();
+}
+function updateAIUI(){
+  const has = !!AI.json;
+  $('optAI').closest('label').classList.toggle('hidden', !has);
+  $('animAI').closest('label').classList.toggle('hidden', !has);
+  $('aiScriptRow').classList.toggle('hidden', !AI.text);
+  $('engineRow').classList.toggle('hidden', !AI.transcribe);
+  $('aiBadge').textContent = AI.kind === 'gemini' ? '✦ IA activa: Gemini (Firebase)' : AI.kind === 'claude' ? '✦ IA activa: Claude' : AI.kind ? '✦ IA activa' : '';
+  renderStyleUI();
+}
+$('aiScriptBtn').onclick = async () => {
+  const topic = $('aiTopic').value.trim(); if (!topic) { toast('Escribe el tema del video'); return; }
+  const btn = $('aiScriptBtn'); btn.disabled = true; btn.textContent = '✦ Escribiendo…';
+  try {
+    const txt = await AI.text(`Escribe un guion corto para un Reel en español latino sobre: ${topic}.\nDe 5 a 8 frases cortas, una por línea. La primera frase es un gancho que despierte curiosidad y la última una llamada a la acción. Tono cercano y natural. Sin títulos, sin emojis, sin numeración, sin comillas. Responde solo con el guion.`);
+    S.anim.script = txt.trim().replace(/^["“]|["”]$/g, ''); $('animScript').value = S.anim.script; persist(); toast('Guion listo ✔ Puedes editarlo');
+  } catch(e) { console.warn(e); toast('La IA no pudo escribir el guion. Intenta de nuevo.'); }
+  finally { btn.disabled = false; btn.textContent = '✦ Escribir con IA'; }
+};
 async function aiIdeas(manual){
-  if (!sampleFn) { if (manual) toast('Las ideas con IA solo funcionan dentro de Claude'); return; }
+  if (!AI.json) { if (manual) toast('La IA no está conectada'); return; }
   const lines = S.cues.map((c, i) => `${i}: ${c.text}`).join('\n').slice(0, 12000);
   const prompt = `Eres editor de Reels y TikTok para una audiencia latinoamericana. Estos son los subtítulos de un video, numerados:\n\n${lines}\n\nResponde SOLO con un objeto JSON con esta forma exacta:\n{"hook": "título gancho de máximo 7 palabras, en español, que despierte curiosidad", "keywords": ["5 a 10 palabras individuales del texto que conviene resaltar"], "emojis": [{"i": número de subtítulo, "e": "un emoji"}], "caption": "texto para la publicación: 2 o 3 frases cortas con 1 o 2 emojis y una llamada a la acción, y al final 5 hashtags relevantes"}\nPon emojis solo en 1 de cada 3 subtítulos aproximadamente, en los momentos más importantes. Las keywords deben aparecer tal cual en los subtítulos.`;
   setStatus('auto', '✦ Pensando ideas con IA…', 'Gancho, palabras clave y emojis', 0.97);
   try {
-    const opts = {modelTier:'quick'}; if (manual) opts.cache = false;
-    const r = await sampleFn.json(prompt, opts);
+    const r = await AI.json(prompt);
     if (r && typeof r === 'object') {
       if (r.hook) S.edit.hook = String(r.hook).slice(0, 80);
       if (Array.isArray(r.keywords)) { S.style.keywords = r.keywords.map(String).slice(0, 14); refreshKw(); }
@@ -1322,12 +1402,12 @@ $('aiAgain').onclick = () => aiIdeas(true);
 $('copyCaption').onclick = async () => { try { await navigator.clipboard.writeText($('aiCaption').textContent); toast('Texto copiado ✔'); } catch(e) { toast('No se pudo copiar'); } };
 
 // ================= ✨ VIDEO ANIMADO =================
-let photoImg = null, cartoonCanvas = null;
+let photoImg = null, cartoonCanvas = null, aiCartoonImg = null, aiCartoonBusy = false;
 $('photoFile').onchange = async e => {
   const f = e.target.files[0]; if (!f) return; e.target.value = '';
   const img = new Image(); img.src = URL.createObjectURL(f);
   try { await img.decode(); } catch(err) { toast('No pude abrir esa foto'); return; }
-  photoImg = img; makeCartoon(); $('photoBox').classList.remove('hidden');
+  photoImg = img; aiCartoonImg = null; if (S.anim.cartoon === 'ia') S.anim.cartoon = 'caricatura'; makeCartoon(); $('photoBox').classList.remove('hidden'); renderStyleUI();
 };
 function boxBlur(src, w, h, r){
   const out = new Uint8ClampedArray(src.length), tmp = new Float32Array(src.length);
@@ -1344,7 +1424,9 @@ function makeCartoon(){
   const cx = iw/2, cy = ih/2 + S.anim.y * ih;
   x.drawImage(photoImg, cx - side/2, cy - side/2, side, side, 0, 0, N, N);
   const style = S.anim.cartoon;
-  if (style !== 'normal') {
+  if (style === 'ia' && aiCartoonImg) x.drawImage(aiCartoonImg, 0, 0, N, N);
+  else if (style === 'ia') { cartoonCanvas = cartoonCanvas || c; generateAICartoon(c); return; }
+  else if (style !== 'normal') {
     const d = x.getImageData(0, 0, N, N).data;
     let sm = boxBlur(d, N, N, 2); sm = boxBlur(sm, N, N, 2);
     const L = style === 'comic' ? 4 : 6, out = new Uint8ClampedArray(d.length), gray = new Float32Array(N*N);
@@ -1365,6 +1447,19 @@ function makeCartoon(){
   }
   cartoonCanvas = c;
   const p = $('photoPrev').getContext('2d'); p.clearRect(0,0,176,176); p.save(); p.beginPath(); p.arc(88,88,88,0,Math.PI*2); p.clip(); p.drawImage(c, 0, 0, 176, 176); p.restore();
+}
+async function generateAICartoon(cropCanvas){
+  if (aiCartoonBusy || !AI.image) return; aiCartoonBusy = true;
+  setStatus('anim', '✦ La IA está dibujando tu caricatura…', 'Puede tardar unos segundos', 0.4);
+  try {
+    const data = cropCanvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+    const r = await AI.image(['Convierte a esta persona en una caricatura estilo película animada 3D: expresiva, amigable y con colores vivos, conservando sus rasgos, peinado, barba o gafas y ropa. Encuadre de cabeza y hombros, centrado y cuadrado, con fondo de un solo color suave. No agregues texto.', {inlineData: {mimeType: 'image/jpeg', data}}]);
+    const img = new Image(); img.src = `data:${r.mimeType || 'image/png'};base64,${r.data}`; await img.decode();
+    aiCartoonImg = img; setStatus('anim', 'Caricatura lista ✔', 'Ahora crea el video animado', 1);
+  } catch(e) {
+    console.warn(e); S.anim.cartoon = 'caricatura'; persist();
+    setStatus('anim', 'No se pudo hacer la caricatura con IA', 'Para imágenes con IA, Firebase pide activar el plan Blaze. Mientras tanto uso el filtro de caricatura.', 0);
+  } finally { aiCartoonBusy = false; makeCartoon(); renderStyleUI(); }
 }
 const EMOJI_DICT = [[/precio|barat|descuento|oferta|ahorr|plata|dinero|pago/,'💰'],[/tienda|almac|local|negocio/,'🏪'],[/casa|hogar/,'🏠'],[/amor|quier|coraz/,'❤️'],[/nuevo|lanz/,'✨'],[/error|cuidado|ojo|evita/,'⚠️'],[/idea|tip|consejo|secreto/,'💡'],[/rapid|hoy|ahora/,'⚡'],[/gracias/,'🙏'],[/visit|ven |llega/,'📍'],[/clientes?|gente|personas/,'👥'],[/calidad|mejor/,'🏆'],[/hola|bienvenid/,'👋'],[/compr|pedido|envio/,'🛒'],[/tiempo|hora|minuto/,'⏰'],[/salud|bienestar/,'🌿'],[/foto|video|reel/,'🎬']];
 function guessEmoji(t){ const n = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); for (const [re, e] of EMOJI_DICT) if (re.test(n)) return e; return '✨'; }
@@ -1390,10 +1485,10 @@ $('makeAnim').onclick = async () => {
     for (let i = 0; i < scenes.length; i++) scenes[i].start = i === 0 ? 0 : (scenes[i-1].end + starts[i]) / 2;
     for (let i = 0; i < scenes.length - 1; i++) scenes[i].end = scenes[i+1].start;
     const last = scenes[scenes.length-1]; last.end = Math.max(last.end + 1.2, voiceBuf ? voiceBuf.duration + 0.4 : 0);
-    if (S.anim.ai && sampleFn) {
+    if (S.anim.ai && AI.json) {
       setStatus('anim', '✦ La IA está eligiendo emojis…', '', 0.95);
       try {
-        const r = await sampleFn.json(`Para un video animado de Reels en español, estas son las escenas numeradas:\n${scenes.map((s,i)=>`${i}: ${s.text}`).join('\n')}\n\nResponde SOLO JSON: {"scenes":[{"i":número,"emoji":"un emoji que represente la escena","kw":["1 o 2 palabras de esa escena a resaltar, tal cual aparecen"]}], "hook":"gancho de máximo 6 palabras"}`, {modelTier:'quick'});
+        const r = await AI.json(`Para un video animado de Reels en español, estas son las escenas numeradas:\n${scenes.map((s,i)=>`${i}: ${s.text}`).join('\n')}\n\nResponde SOLO JSON: {"scenes":[{"i":número,"emoji":"un emoji que represente la escena","kw":["1 o 2 palabras de esa escena a resaltar, tal cual aparecen"]}], "hook":"gancho de máximo 6 palabras"}`);
         (r.scenes || []).forEach(o => { const s = scenes[+o.i]; if (s) { if (o.emoji) s.emoji = String(o.emoji).slice(0,4); if (Array.isArray(o.kw)) s.kw = o.kw.map(k => norm(String(k))); } });
         if (r.hook) { S.edit.hook = String(r.hook).slice(0, 60); syncInputs(); }
       } catch(e) { console.warn(e); }
@@ -1489,8 +1584,8 @@ const bindings = [
   ['sens', () => S.auto.sens, v => S.auto.sens = v, v => Math.round(v*100)+'%', false],
   ['autoWpc', () => S.auto.wpc, v => S.auto.wpc = v, v => String(v), false],
   ['hookDur', () => S.edit.hookDur, v => S.edit.hookDur = v, v => v.toFixed(1)+'s', false],
-  ['phZoom', () => S.anim.zoom, v => { S.anim.zoom = v; makeCartoon(); }, v => v.toFixed(2)+'×', false],
-  ['phY', () => S.anim.y, v => { S.anim.y = v; makeCartoon(); }, v => (v>0?'+':'')+Math.round(v*100), false],
+  ['phZoom', () => S.anim.zoom, v => { S.anim.zoom = v; if (S.anim.cartoon !== 'ia') makeCartoon(); }, v => v.toFixed(2)+'×', false],
+  ['phY', () => S.anim.y, v => { S.anim.y = v; if (S.anim.cartoon !== 'ia') makeCartoon(); }, v => (v>0?'+':'')+Math.round(v*100), false],
 ];
 function chipGroup(id, options, get, set, after){
   const box = $(id); box.innerHTML = '';
@@ -1521,7 +1616,8 @@ function renderStyleUI(){
   chipGroup('lookChips', LOOKS, () => S.edit.look, v => S.edit.look = v);
   chipGroup('fitChips', FITS, () => S.edit.fit, v => S.edit.fit = v);
   chipGroup('resChips', RESS, () => S.edit.res, v => S.edit.res = +v, updateFmtInfo);
-  chipGroup('cartoonChips', {caricatura:'Caricatura', comic:'Cómic', normal:'Normal'}, () => S.anim.cartoon, v => S.anim.cartoon = v, makeCartoon);
+  chipGroup('cartoonChips', Object.assign(AI.image ? {ia:'✦ Caricatura IA'} : {}, {caricatura:'Caricatura', comic:'Cómic', normal:'Normal'}), () => S.anim.cartoon, v => { if (v === 'ia') aiCartoonImg = null; S.anim.cartoon = v; }, makeCartoon);
+  chipGroup('engineChips', {gemini:'✦ Gemini (más preciso)', local:'En el celular'}, () => S.auto.engine, v => S.auto.engine = v);
   const fb = $('fmts'); fb.innerHTML = '';
   Object.entries(FORMATS).forEach(([k, f]) => { const b = document.createElement('button'); b.className = 'fmt' + (S.edit.format === k ? ' on' : '');
     const ar = f.ar || (video.videoWidth ? video.videoWidth / video.videoHeight : 1), h = 26, w = Math.round(Math.min(40, h * ar)), hh = Math.round(w / ar);
@@ -1642,7 +1738,7 @@ $('saveBtn').onclick = async () => {
 };
 
 // ================= Inicio =================
-refreshKw(); syncInputs(); renderCues(); renderSegs(); setSrc(S.src); layoutStage();
+refreshKw(); syncInputs(); renderCues(); renderSegs(); setSrc(S.src); layoutStage(); initAI();
 requestAnimationFrame(loop);
 })();
 </script>
