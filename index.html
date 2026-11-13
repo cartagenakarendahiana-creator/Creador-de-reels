@@ -1329,7 +1329,7 @@ function wavB64(f){
 async function initAI(){
   try { if (window.claude && window.claude.use) sampleFn = await window.claude.use('sample'); } catch(e){}
   if (window.__AI_MOCK) Object.assign(AI, window.__AI_MOCK);
-  else if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
+  else if (!sampleFn && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
     try {
       const m = await import('./lib/firebase-ai.js');
       const app = m.initializeApp(window.FIREBASE_CONFIG), ai = m.getAI(app, {backend: new m.GoogleAIBackend()});

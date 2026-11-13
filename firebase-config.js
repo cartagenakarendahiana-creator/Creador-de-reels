@@ -1,7 +1,14 @@
 // Configuración de Firebase para la IA (Gemini por Firebase AI Logic).
 // Pega aquí los datos de tu app web de Firebase (Configuración del proyecto → Tus apps → Web).
 // Estos datos son públicos por diseño; la seguridad se controla desde Firebase.
-window.FIREBASE_CONFIG = null;
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDWHhR7Kha223v3rLdRsgv06yjTkUAp_FY",
+  authDomain: "estudio-de-reels.firebaseapp.com",
+  projectId: "estudio-de-reels",
+  storageBucket: "estudio-de-reels.firebasestorage.app",
+  messagingSenderId: "104107160079",
+  appId: "1:104107160079:web:3908ae6b5f8927bdfb697a"
+};
 /* Ejemplo:
 window.FIREBASE_CONFIG = {
   apiKey: "AIza...",
