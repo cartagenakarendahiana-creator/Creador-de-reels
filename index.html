@@ -9,38 +9,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bebas+Neue&family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#000; --bar:#0d0d0f; --panel:#161618; --panel2:#202023; --panel3:#2a2a2e; --line:#2c2c30;
-  --text:#f4f4f5; --muted:#8b8b93; --soft:#c8c8cf; --acc:#2ee6d6; --acc2:#7cf7ec; --bad:#ff5f7a; --vio:#a78bfa; --grn:#4ade80;
+  --bg:#000; --bar:#0c0c0e; --panel:#151517; --panel2:#1f1f22; --panel3:#2a2a2e; --line:#29292d;
+  --text:#f4f4f5; --muted:#8b8b93; --soft:#c8c8cf; --acc:#2ee6d6; --acc2:#7cf7ec; --vio:#8b7bff; --bad:#ff5f7a;
+  --tb:64px; --top:52px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14.5px;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
-.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.92);backdrop-filter:blur(10px);border-bottom:1px solid #111}
-.logo{font-weight:800;font-size:16px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
-.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--acc),#7c6cff);display:grid;place-items:center;font-style:normal;color:#001;font-size:13px}
+.topbar{position:sticky;top:0;z-index:40;height:var(--top);display:flex;align-items:center;gap:8px;padding:0 12px;background:rgba(0,0,0,.94);backdrop-filter:blur(12px);border-bottom:1px solid #141416}
+.logo{font-weight:800;font-size:15.5px;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer}
+.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--vio));display:grid;place-items:center;font-style:normal;color:#001;font-size:13px}
 .topbar .sp{flex:1}
-.pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer}
+.pill{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .pill.exp{background:#fff;color:#000;border-color:#fff;padding:8px 16px}
-.work{display:grid;gap:0}
-@media(min-width:960px){.work{grid-template-columns:minmax(0,1fr) 420px;height:calc(100vh - 53px)}.viewer{overflow:auto}.panel{border-left:1px solid #111;overflow:auto;height:100%}.toolbar{position:sticky!important}}
-.viewer{display:flex;flex-direction:column;background:#000;min-width:0;position:relative}
-.drop{margin:16px;border:1.5px dashed #333;border-radius:20px;padding:40px 16px;text-align:center;background:#0b0b0d}
-.drop .big{width:64px;height:64px;border-radius:20px;margin:0 auto 14px;background:linear-gradient(135deg,var(--acc),#7c6cff);display:grid;place-items:center;font-size:26px;color:#001;cursor:pointer}
-.drop h2{margin:0 0 6px;font-size:20px;letter-spacing:-.3px}
-.drop p{color:var(--muted);margin:0 0 16px;line-height:1.5}
-.drop .row{justify-content:center}
-.stagewrap{display:flex;justify-content:center;align-items:center;background:#000;padding:10px 10px 0}
-.stage{position:relative;background:#111;border-radius:6px;overflow:hidden;box-shadow:0 0 0 1px #1c1c1f}
+.aitag{font-size:11.5px;color:var(--acc2);border:1px solid rgba(46,230,214,.35);border-radius:999px;padding:4px 9px;white-space:nowrap}
+/* ---------- estructura ---------- */
+.viewer{display:flex;flex-direction:column;background:#000;min-width:0}
+.stagewrap{display:flex;justify-content:center;align-items:center;padding:10px 10px 0;flex:1;min-height:0}
+.stage{position:relative;background:#111;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px #1c1c1f,0 20px 50px rgba(0,0,0,.6)}
 .stage canvas{display:block;width:100%;height:100%}
 #video{position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none}
-.transport{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px}
-.transport .tm{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--soft);min-width:110px}
+.transport{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;gap:8px}
+.transport .tm{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--soft);min-width:96px}
 .transport .tm b{color:#fff;font-weight:600}
-.playbtn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:#fff;font-size:22px;cursor:pointer}
-.tl-tools{display:flex;gap:6px;min-width:110px;justify-content:flex-end}
-.tl-tools button{border:0;background:var(--panel2);color:var(--soft);border-radius:8px;width:30px;height:28px;cursor:pointer;font-weight:700}
+.playbtn{width:44px;height:44px;border-radius:50%;border:0;background:#fff;color:#000;font-size:17px;cursor:pointer;flex:0 0 auto}
+.tl-tools{display:flex;gap:6px;min-width:96px;justify-content:flex-end}
+.tl-tools button{border:0;background:var(--panel2);color:var(--soft);border-radius:9px;width:32px;height:30px;cursor:pointer;font-weight:700;font-size:14px}
+.tl-tools button:disabled{opacity:.35}
+.tlsec{background:#0a0a0b;border-top:1px solid #151517;min-width:0}
 .tlwrap{position:relative}
-.timeline{position:relative;height:122px;overflow-x:auto;overflow-y:hidden;background:#0a0a0b;border-top:1px solid #151517;border-bottom:1px solid #151517;scrollbar-width:none;touch-action:pan-x}
+.timeline{position:relative;height:122px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;touch-action:pan-x}
 .timeline::-webkit-scrollbar{display:none}
 .tl-inner{position:relative;height:100%}
 .ruler{position:absolute;top:0;left:0;height:16px;font-size:9.5px;color:#666}
@@ -51,7 +49,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .trk-t{top:72px;height:20px}
 .trk-a{top:96px;height:18px}
 .blk{position:absolute;top:0;bottom:0;border-radius:5px;font-size:10.5px;line-height:20px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.blk.txt{background:#5b3fd6;color:#fff;border:1px solid #7a62ff}
+.blk.txt{background:#4b36c9;color:#fff;border:1px solid #7a62ff}
 .blk.txt.on{background:#7a62ff;box-shadow:0 0 0 1.5px #fff}
 .blk.mus{background:#14532d;color:#bbf7d0;border:1px solid #22c55e;line-height:16px}
 .blk.voz{background:#3b2a73;color:#ddd6fe;border:1px solid #8b5cf6;line-height:16px}
@@ -59,23 +57,73 @@ button,input,select,textarea{font:inherit;color:inherit}
 .segline{position:absolute;top:0;bottom:0;width:2px;background:#fff;opacity:.85}
 .playhead{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#fff;pointer-events:none;z-index:3;box-shadow:0 0 6px rgba(255,255,255,.6)}
 .playhead::before{content:"";position:absolute;top:0;left:-5px;width:12px;height:8px;background:#fff;border-radius:0 0 6px 6px}
-.toolbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:2px;overflow-x:auto;padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:rgba(13,13,15,.97);border-top:1px solid #1b1b1e;scrollbar-width:none}
+.toolbar{display:flex;gap:2px;background:var(--bar);scrollbar-width:none}
 .toolbar::-webkit-scrollbar{display:none}
-.toolbar button{flex:0 0 auto;min-width:64px;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer}
+.toolbar button{flex:0 0 auto;border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer}
 .toolbar button span{font-size:19px;line-height:1;color:#ddd}
 .toolbar button.on{color:#fff;background:var(--panel2)}
 .toolbar button.on span{color:var(--acc)}
-@media(min-width:960px){.toolbar{position:sticky;bottom:0}}
-.panel{background:var(--bar);padding:12px 12px 100px}
+.panel{background:var(--bar)}
+.sheethead{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;position:sticky;top:0;background:var(--bar);z-index:2}
+.sheethead::before{content:"";position:absolute;left:50%;top:5px;width:38px;height:4px;border-radius:4px;background:#3a3a3f;transform:translateX(-50%)}
+.sheethead b{font-size:15px;margin-top:8px}
+.sheethead button{border:0;background:var(--panel2);color:var(--soft);width:32px;height:32px;border-radius:50%;cursor:pointer;margin-top:6px}
+.panebody{padding:6px 12px 24px}
 .pane{display:none}
-.pane.on{display:block}
+.pane.on{display:block;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* ---------- celular ---------- */
+@media(max-width:999px){
+  .pcOnly{display:none}
+  body{padding-bottom:calc(var(--tb) + env(safe-area-inset-bottom))}
+  .toolbar{position:fixed;left:0;right:0;bottom:0;z-index:50;overflow-x:auto;padding:5px 6px calc(5px + env(safe-area-inset-bottom));border-top:1px solid #1b1b1e;background:rgba(12,12,14,.98)}
+  .toolbar button{min-width:62px}
+  .panel{position:fixed;left:0;right:0;bottom:calc(var(--tb) + env(safe-area-inset-bottom));z-index:45;max-height:58vh;overflow-y:auto;border-radius:20px 20px 0 0;border-top:1px solid #222;box-shadow:0 -20px 50px rgba(0,0,0,.7);transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overscroll-behavior:contain}
+  .panel:not(.open){visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s .28s}
+  .panel.open{transform:none}
+  .home{padding:16px 14px 30px}
+}
+/* ---------- PC ---------- */
+@media(min-width:1000px){
+  .work{display:grid;grid-template-columns:86px 400px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"tool panel view" "tool panel tl";height:calc(100vh - var(--top))}
+  .toolbar{grid-area:tool;flex-direction:column;overflow-y:auto;padding:10px 8px;border-right:1px solid #141416}
+  .toolbar button{width:70px;padding:10px 4px}
+  .panel{grid-area:panel;overflow-y:auto;border-right:1px solid #141416}
+  .sheethead{display:none}
+  .panebody{padding:14px}
+  .viewer{grid-area:view;overflow:hidden}
+  .tlsec{grid-area:tl}
+  .home{padding:40px 48px;overflow:auto}
+}
+/* ---------- inicio ---------- */
+.home{max-width:980px;margin:0 auto;width:100%}
+.hero h1{font-size:28px;letter-spacing:-.6px;margin:6px 0 6px;line-height:1.15}
+.hero h1 span{background:linear-gradient(90deg,var(--acc),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);margin:0 0 18px;line-height:1.5}
+.homecards{display:grid;gap:10px;grid-template-columns:1fr}
+@media(min-width:700px){.homecards{grid-template-columns:1.3fr 1fr 1fr}}
+.hc{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:1px solid var(--line);background:linear-gradient(160deg,#18181b,#101012);border-radius:18px;padding:16px;cursor:pointer;transition:.2s}
+.hc:hover{border-color:#3a3a40;transform:translateY(-2px)}
+.hc.main{background:linear-gradient(140deg,rgba(46,230,214,.18),rgba(139,123,255,.2) 60%,#111);border-color:rgba(46,230,214,.35)}
+.hc .hi{width:40px;height:40px;border-radius:12px;background:#fff;color:#000;display:grid;place-items:center;font-size:19px}
+.hc.main .hi{background:linear-gradient(135deg,var(--acc),var(--vio));color:#001}
+.hc b{font-size:16px}
+.hc small{color:var(--muted);line-height:1.45;font-size:12.5px}
+.tpls{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:700px){.home .tpls{grid-template-columns:repeat(3,1fr)}}
+.tpl{border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;background:#111;padding:0;text-align:left}
+.tpl.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.tpl .pv{height:74px;display:grid;place-items:center;color:#fff;font-size:17px;padding:0 8px;text-align:center;line-height:1.05}
+.tpl .nm{padding:8px 10px 2px;font-weight:700;font-size:13px}
+.tpl .ds{padding:0 10px 10px;color:var(--muted);font-size:11.5px;line-height:1.35}
+/* ---------- componentes ---------- */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
 .card h3{margin:0 0 3px;font-size:15.5px;font-weight:700;letter-spacing:-.2px}
 .card .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.45}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .btn{border:1px solid var(--line);background:var(--panel2);padding:10px 13px;border-radius:12px;font-weight:600;font-size:13.5px;cursor:pointer}
 .btn:hover{background:var(--panel3)}
-.btn.acc{background:var(--acc);color:#001;border-color:var(--acc)}
+.btn.acc{background:linear-gradient(135deg,var(--acc),#7de8ff);color:#001;border:0}
 .btn.white{background:#fff;color:#000;border-color:#fff}
 .btn.danger{color:var(--bad)}
 .btn.big{width:100%;padding:14px;font-size:15px;border-radius:14px}
@@ -94,7 +142,7 @@ input[type=range]{width:100%;accent-color:var(--acc);height:22px;margin:0}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .preset{border:1px solid var(--line);border-radius:12px;cursor:pointer;padding:0;overflow:hidden;background:#111}
 .preset.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
-.preset .pv{height:58px;display:grid;place-items:center;background:linear-gradient(160deg,#2b3440,#121418 60%,#2b2230);color:#fff;font-size:15px;padding:0 6px;text-align:center;line-height:1.05}
+.preset .pv{height:56px;display:grid;place-items:center;background:linear-gradient(160deg,#2b3440,#121418 60%,#2b2230);color:#fff;font-size:15px;padding:0 6px;text-align:center;line-height:1.05}
 .preset .nm{font-size:11px;color:var(--soft);padding:5px 4px;font-weight:600}
 .font{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:9px 4px 6px;cursor:pointer;text-align:center}
 .font.on{border-color:var(--acc)}
@@ -104,14 +152,14 @@ input[type=range]{width:100%;accent-color:var(--acc);height:22px;margin:0}
 .fmt i{display:block;border:2px solid currentColor;border-radius:3px}
 .fmt.on{border-color:var(--acc);color:#fff}
 textarea.script,.txtin{width:100%;background:#0c0c0e;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:14px;line-height:1.45}
-textarea.script{min-height:120px;resize:vertical}
+textarea.script{min-height:110px;resize:vertical}
 input[type=color]{width:44px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:2px}
 .check{display:flex;align-items:center;gap:10px;font-size:13.5px;margin:10px 0;color:var(--soft)}
 .check input{width:18px;height:18px;accent-color:var(--acc);flex:0 0 auto}
 .note{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0}
 .note b{color:var(--soft)}
 .progress{height:6px;background:var(--panel3);border-radius:6px;overflow:hidden;margin:10px 0 6px}
-.progress div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),#7c6cff);transition:width .25s}
+.progress div{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--vio));transition:width .25s}
 .status{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:12px}
 .status b{display:block;font-size:13.5px;margin-bottom:2px}
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -151,64 +199,51 @@ a{color:var(--acc2)}
 .theme.on{border-color:#fff}
 .result video{width:100%;max-height:48vh;border-radius:12px;background:#000;margin-top:10px}
 .caption{white-space:pre-wrap;background:#0c0c0e;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px;line-height:1.45;margin-top:8px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;justify-content:center;z-index:80}
 .modal.on{display:flex}
 .sheet{background:#141416;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto}
 @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:20px}}
 .sheet h3{margin:0 0 8px;font-size:17px}
 .sheet textarea{width:100%;min-height:170px;background:#0c0c0e;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px}
-.syncbar{position:fixed;left:0;right:0;bottom:0;padding:12px;background:linear-gradient(transparent,rgba(0,0,0,.95) 30%);display:none;z-index:70}
+.syncbar{position:fixed;left:0;right:0;bottom:0;padding:12px;background:linear-gradient(transparent,rgba(0,0,0,.95) 30%);display:none;z-index:90}
 .syncbar.on{display:block}
 .syncbar .tap{width:100%;max-width:560px;margin:0 auto;display:block;border:0;border-radius:18px;background:var(--acc);color:#001;padding:20px 14px;font-weight:800;font-size:16px;cursor:pointer;line-height:1.3}
 .syncbar .tap small{display:block;font-weight:600;font-size:13px;opacity:.7;margin-top:4px}
 .syncbar .row{max-width:560px;margin:8px auto 0;justify-content:center}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:#fff;color:#000;padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(var(--tb) + 24px);transform:translateX(-50%) translateY(10px);background:#fff;color:#000;padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .hidden{display:none!important}
-.ai{background:linear-gradient(135deg,rgba(46,230,214,.12),rgba(124,108,255,.14));border-color:rgba(124,108,255,.35)}
+.ai{background:linear-gradient(135deg,rgba(46,230,214,.12),rgba(139,123,255,.14));border-color:rgba(139,123,255,.35)}
+.kbd{display:inline-block;border:1px solid #444;border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:11px;color:var(--soft);margin:0 2px}
+.logoprev{max-width:64px;max-height:64px;border-radius:8px;background:#222;margin-top:8px;display:block}
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="logo"><i>✦</i>Estudio de Reels</div>
+  <div class="logo" id="homeLogo"><i>✦</i>Estudio de Reels</div>
+  <span class="aitag hidden" id="aiTag">✦ IA</span>
   <div class="sp"></div>
   <button class="pill" id="fmtPill">9:16</button>
   <button class="pill exp" id="exportPill">Exportar</button>
 </div>
 
 <div class="work">
-  <section class="viewer">
-    <div class="drop" id="drop">
-      <label class="big" for="videoFile">＋</label>
-      <h2>Nuevo proyecto</h2>
-      <p>Carga un video de cualquier tamaño o formato,<br>o crea un video animado solo con tu guion y tu foto.</p>
-      <div class="row">
-        <label class="btn white">🎬 Cargar video<input type="file" id="videoFile" accept="video/*" hidden></label>
-        <button class="btn" id="goAnim">✨ Video animado</button>
-      </div>
-    </div>
-    <div id="editor" class="hidden">
-      <div class="stagewrap"><div class="stage" id="stage"><canvas id="view"></canvas></div></div>
-      <div class="transport">
-        <div class="tm" id="time"><b>0:00</b> / 0:00</div>
-        <button class="playbtn" id="playBtn" aria-label="Reproducir">▶</button>
-        <div class="tl-tools"><button id="zoomOut" title="Alejar">－</button><button id="zoomIn" title="Acercar">＋</button></div>
-      </div>
-      <div class="tlwrap">
-        <div class="timeline" id="tl">
-          <div class="tl-inner" id="tlInner">
-            <div class="ruler" id="ruler"></div>
-            <div class="track trk-v" id="trkV"><canvas id="thumbs"></canvas></div>
-            <div class="track trk-t" id="trkT"></div>
-            <div class="track trk-a" id="trkA"></div>
-          </div>
-        </div>
-        <div class="playhead"></div>
-      </div>
-    </div>
-  </section>
+  <nav class="toolbar" id="toolbar">
+    <button data-pane="auto" class="on"><span>✦</span>Auto</button>
+    <button data-pane="tpl"><span>❖</span>Plantillas</button>
+    <button data-pane="cut"><span>✂</span>Cortar</button>
+    <button data-pane="text"><span>T</span>Texto</button>
+    <button data-pane="style"><span>Aa</span>Estilo</button>
+    <button data-pane="audio"><span>♪</span>Audio</button>
+    <button data-pane="fx"><span>✺</span>Efectos</button>
+    <button data-pane="format"><span>▭</span>Formato</button>
+    <button data-pane="anim"><span>☺</span>Animado</button>
+    <button data-pane="export"><span>↓</span>Exportar</button>
+  </nav>
 
   <aside class="panel" id="panel">
+    <div class="sheethead"><b id="paneTitle">Auto</b><button id="sheetClose" aria-label="Cerrar">✕</button></div>
+    <div class="panebody">
     <!-- AUTO -->
     <div class="pane on" id="pane-auto">
       <div class="card">
@@ -225,6 +260,7 @@ a{color:var(--acc2)}
         <div id="videoOpts">
           <label class="check"><input type="checkbox" id="optSilence"> Quitar silencios y pausas largas</label>
           <label class="check"><input type="checkbox" id="optTakes"> Quitar tomas repetidas o equivocadas</label>
+          <label class="check"><input type="checkbox" id="optFillers"> Quitar muletillas (eh, mmm…)</label>
         </div>
         <label class="check"><input type="checkbox" id="optSubs"> Crear subtítulos</label>
         <label class="check"><input type="checkbox" id="optAI"> Ideas con IA: gancho, palabras clave y emojis</label>
@@ -236,7 +272,7 @@ a{color:var(--acc2)}
           <div class="field"><span>Palabras por subtítulo</span><input type="range" id="autoWpc" min="1" max="8" step="1"><output id="autoWpcO"></output></div>
           <div id="engineRow" class="hidden"><div class="label">Motor de voz</div><div class="chips" id="engineChips"></div></div>
         </details>
-        <button class="btn acc big" id="analyzeBtn" style="margin-top:10px">✦ Editar automáticamente</button>
+        <button class="btn acc big" id="analyzeBtn" style="margin-top:10px">✦ Editar todo automáticamente</button>
         <p class="note">La primera vez descarga el modelo de voz (~65 MB, mejor con wifi). Todo corre en tu celular.</p>
         <div class="status hidden" id="autoStatus">
           <b id="autoStatusTitle">Preparando…</b>
@@ -249,6 +285,7 @@ a{color:var(--acc2)}
             <div class="stat"><small>Cortes</small><b id="sumCuts">–</b></div>
           </div>
           <p class="note" id="sumNote"></p>
+          <div class="row"><button class="btn white" id="goExport">⬇ Exportar video</button><button class="btn" id="goTpl">❖ Probar otra plantilla</button></div>
         </div>
       </div>
       <div class="card ai hidden" id="aiCard">
@@ -260,6 +297,14 @@ a{color:var(--acc2)}
       </div>
     </div>
 
+    <!-- PLANTILLAS -->
+    <div class="pane" id="pane-tpl">
+      <div class="card">
+        <h3>❖ Plantillas</h3>
+        <p class="sub">Un toque y tu video queda con estilo de texto, efectos, transiciones y ritmo de cortes.</p>
+        <div class="tpls" id="tpls"></div>
+      </div>
+    </div>
     <!-- CORTAR -->
     <div class="pane" id="pane-cut">
       <div class="card">
@@ -270,6 +315,7 @@ a{color:var(--acc2)}
           <button class="btn" id="toggleHereBtn">🗑 Quitar esta parte</button>
           <button class="btn danger" id="resetCutsBtn">Sin cortes</button>
         </div>
+        <p class="note pcOnly">Atajos: <span class="kbd">Espacio</span> reproducir · <span class="kbd">S</span> dividir · <span class="kbd">Supr</span> quitar parte · <span class="kbd">Ctrl</span>+<span class="kbd">Z</span> deshacer · <span class="kbd">←</span><span class="kbd">→</span> mover</p>
         <div class="list" id="segs"></div>
         <details id="transcriptBox" class="hidden">
           <summary>Ver todo lo que escuchó</summary>
@@ -342,6 +388,7 @@ a{color:var(--acc2)}
         <div class="field"><span>Audio del video</span><input type="range" id="videoVol" min="0" max="1.5" step="0.01"><output id="videoVolO"></output></div>
         <div class="field"><span>Voz ElevenLabs</span><input type="range" id="voiceVol" min="0" max="1.5" step="0.01"><output id="voiceVolO"></output></div>
         <label class="check"><input type="checkbox" id="duck"> Bajar la música cuando hay voz (automático)</label>
+        <label class="check"><input type="checkbox" id="enhance"> Mejorar la voz del video (más clara y pareja)</label>
         <div class="label">Tiempos</div>
         <div class="field"><span>Empieza en</span><input type="range" id="musicStart" min="0" max="60" step="0.1"><output id="musicStartO"></output></div>
         <div class="field"><span>Desde la canción</span><input type="range" id="musicOffset" min="0" max="180" step="0.5"><output id="musicOffsetO"></output></div>
@@ -371,11 +418,24 @@ a{color:var(--acc2)}
       <div class="card">
         <h3>Efectos</h3>
         <div class="label" style="margin-top:6px">Zoom</div><div class="chips" id="zoomChips"></div>
+        <div class="label">Transición en los cortes</div><div class="chips" id="transChips"></div>
         <div class="label">Color del video</div><div class="chips" id="lookChips"></div>
         <div class="label">Título gancho (arriba, al inicio)</div>
         <input class="txtin" id="hookText" placeholder="Ej: 3 errores que te hacen perder clientes">
         <div class="field"><span>Duración</span><input type="range" id="hookDur" min="1" max="10" step="0.5"><output id="hookDurO"></output></div>
         <label class="check"><input type="checkbox" id="progressBar"> Barra de progreso abajo</label>
+      </div>
+      <div class="card">
+        <h3>Tu marca</h3>
+        <p class="sub">Logo en una esquina y un cierre con llamada a la acción.</p>
+        <div class="row"><label class="btn">🖼 Subir logo<input type="file" id="logoFile" accept="image/*" hidden></label><button class="btn danger hidden" id="logoRemove">Quitar logo</button></div>
+        <img id="logoPrev" class="logoprev hidden" alt="">
+        <div class="label">Posición del logo</div><div class="chips" id="logoPosChips"></div>
+        <div class="field"><span>Tamaño</span><input type="range" id="logoSize" min="6" max="30" step="1"><output id="logoSizeO"></output></div>
+        <div class="field"><span>Opacidad</span><input type="range" id="logoOp" min="0.3" max="1" step="0.05"><output id="logoOpO"></output></div>
+        <div class="label">Cierre (últimos segundos)</div>
+        <input class="txtin" id="ctaText" placeholder="Ej: Síguenos para más tips">
+        <input class="txtin" id="ctaHandle" placeholder="@tuusuario" style="margin-top:8px">
       </div>
     </div>
 
@@ -426,20 +486,44 @@ a{color:var(--acc2)}
         </div>
       </div>
     </div>
+    </div>
   </aside>
-</div>
 
-<nav class="toolbar" id="toolbar">
-  <button data-pane="auto" class="on"><span>✦</span>Auto</button>
-  <button data-pane="cut"><span>✂</span>Cortar</button>
-  <button data-pane="text"><span>T</span>Texto</button>
-  <button data-pane="style"><span>Aa</span>Estilo</button>
-  <button data-pane="audio"><span>♪</span>Audio</button>
-  <button data-pane="fx"><span>✺</span>Efectos</button>
-  <button data-pane="format"><span>▭</span>Formato</button>
-  <button data-pane="anim"><span>☺</span>Animado</button>
-  <button data-pane="export"><span>↓</span>Exportar</button>
-</nav>
+  <section class="viewer" id="viewer">
+    <div class="home" id="drop">
+      <div class="hero"><h1>¿Qué vamos a <span>crear hoy</span>?</h1><p>Editor automático con IA: corta, subtitula, pone música y efectos por ti.</p></div>
+      <div class="homecards">
+        <label class="hc main"><input type="file" id="videoFile" accept="video/*" hidden><span class="hi">✦</span><b>Editar mi video</b><small>Súbelo y la IA quita silencios y tomas malas, pone subtítulos, efectos y música.</small></label>
+        <button class="hc" id="goAnim"><span class="hi">☺</span><b>Video animado</b><small>Solo con un guion y tu foto convertida en caricatura.</small></button>
+        <button class="hc" id="goVoice"><span class="hi">🎙️</span><b>Mi video + voz IA</b><small>Tu voz clonada de ElevenLabs sobre tu video, sincronizada sola.</small></button>
+      </div>
+      <div class="label" style="margin-top:22px">Plantillas</div>
+      <div class="tpls" id="homeTpls"></div>
+    </div>
+    <div id="editor" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="stagewrap"><div class="stage" id="stage"><canvas id="view"></canvas></div></div>
+      <div class="transport">
+        <div class="tm" id="time"><b>0:00</b> / 0:00</div>
+        <button class="playbtn" id="playBtn" aria-label="Reproducir">▶</button>
+        <div class="tl-tools"><button id="undoBtn" title="Deshacer" disabled>↶</button><button id="redoBtn" title="Rehacer" disabled>↷</button><button id="zoomOut" title="Alejar">－</button><button id="zoomIn" title="Acercar">＋</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tlsec hidden" id="tlsec">
+    <div class="tlwrap">
+      <div class="timeline" id="tl">
+        <div class="tl-inner" id="tlInner">
+          <div class="ruler" id="ruler"></div>
+          <div class="track trk-v" id="trkV"><canvas id="thumbs"></canvas></div>
+          <div class="track trk-t" id="trkT"></div>
+          <div class="track trk-a" id="trkA"></div>
+        </div>
+      </div>
+      <div class="playhead"></div>
+    </div>
+  </section>
+</div>
 
 <video id="video" playsinline preload="auto"></video>
 
@@ -483,7 +567,10 @@ const PRESETS = {
 const BGS = {shadow:'Sombra suave', stroke:'Borde fino', box:'Caja', none:'Nada'};
 const ANIMS = {pop:'Pop', fade:'Suave', words:'Palabra por palabra', none:'Ninguna'};
 const HLS = {none:'Igual', dim:'Brillo', color:'Color'};
-const ZOOMS = {none:'Sin zoom', cortes:'Zoom en cortes', lento:'Zoom lento'};
+const ZOOMS = {none:'Sin zoom', cortes:'Zoom en cortes', clave:'Zoom en palabras clave', lento:'Zoom lento'};
+const TRANS = {none:'Corte seco', zoom:'Zoom rápido', flash:'Destello', fade:'Fundido'};
+const LOGOPOS = {tl:'↖ Arriba izq.', tr:'↗ Arriba der.', bl:'↙ Abajo izq.', br:'↘ Abajo der.'};
+const FILLERS = new Set(['eh','ehh','ehhh','eeh','eeeh','em','emm','emmm','mm','mmm','mmmm','hmm','hm','ah','ahh','um','uh','mhm','eem']);
 const LOOKS = {
   natural:{n:'Natural', f:'none'}, calido:{n:'Cálido', f:'saturate(1.12) sepia(0.12) contrast(1.05) brightness(1.02)'},
   frio:{n:'Frío', f:'saturate(1.05) hue-rotate(-8deg) contrast(1.06) brightness(1.02)'}, vivido:{n:'Vívido', f:'saturate(1.32) contrast(1.08)'},
@@ -492,6 +579,14 @@ const LOOKS = {
 const FORMATS = {original:{n:'Original', ar:null}, '9:16':{n:'9:16 Reels', ar:9/16}, '4:5':{n:'4:5 Feed', ar:4/5}, '1:1':{n:'1:1', ar:1}, '16:9':{n:'16:9 YouTube', ar:16/9}, '3:4':{n:'3:4', ar:3/4}};
 const FITS = {fill:'Llenar (recortar)', blur:'Fondo difuminado', black:'Bordes negros'};
 const RESS = {720:'720p', 1080:'1080p', 1440:'2K'};
+const TEMPLATES = {
+  viral:     {n:'Viral', d:'Rápido, zoom en palabras clave y texto que salta', bg:'linear-gradient(135deg,#ff2d7a,#7a2dff)', style:{...PRESETS['Karaoke']}, edit:{zoom:'clave', trans:'zoom', look:'vivido', progress:true}, auto:{minGap:0.25, pad:0.08, wpc:2}},
+  limpio:    {n:'Limpio', d:'Natural y fácil de leer, para todo tipo de video', bg:'linear-gradient(135deg,#334155,#0f172a)', style:{...PRESETS['Limpio']}, edit:{zoom:'cortes', trans:'none', look:'natural', progress:false}, auto:{minGap:0.35, pad:0.12, wpc:3}},
+  elegante:  {n:'Elegante', d:'Letra fina, fundidos suaves y color de cine', bg:'linear-gradient(135deg,#3f3f46,#18181b)', style:{...PRESETS['Elegante']}, edit:{zoom:'lento', trans:'fade', look:'cine', progress:false}, auto:{minGap:0.5, pad:0.18, wpc:4}},
+  marca:     {n:'Marca / Negocio', d:'Texto en caja, color cálido y cierre con llamada a la acción', bg:'linear-gradient(135deg,#b45309,#facc15)', style:{...PRESETS['Caja']}, edit:{zoom:'cortes', trans:'flash', look:'calido', progress:true}, auto:{minGap:0.3, pad:0.1, wpc:3}},
+  misterio:  {n:'Misterio', d:'Letra impactante, fundidos y tono oscuro', bg:'linear-gradient(135deg,#111827,#7f1d1d)', style:{...PRESETS['Impacto']}, edit:{zoom:'lento', trans:'fade', look:'cine', progress:true}, auto:{minGap:0.45, pad:0.15, wpc:3}},
+  testimonio:{n:'Testimonio', d:'Cercano y emotivo, palabra por palabra', bg:'linear-gradient(135deg,#9a3412,#db2777)', style:{...PRESETS['Moderno']}, edit:{zoom:'none', trans:'fade', look:'calido', progress:false}, auto:{minGap:0.45, pad:0.15, wpc:3}},
+};
 const THEMES = {
   violeta:{n:'Violeta', c:['#6d28d9','#db2777'], a:'#fde047'}, oceano:{n:'Océano', c:['#0369a1','#6366f1'], a:'#5eead4'},
   atardecer:{n:'Atardecer', c:['#ea580c','#be123c'], a:'#fef08a'}, menta:{n:'Menta', c:['#059669','#0284c7'], a:'#fef08a'},
@@ -505,15 +600,17 @@ let S = {
   music: {vol:0.15, start:0, offset:0, fadeIn:1, fadeOut:2, loop:true, duck:true},
   videoVol: 1, voiceVol: 1,
   script: '', src: 'video',
-  auto: {silence:true, takes:true, subs:true, ai:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3, engine:'gemini'},
-  edit: {zoom:'cortes', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
+  auto: {silence:true, takes:true, subs:true, ai:true, fillers:true, enhance:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3, engine:'gemini'},
+  brand: {logo:null, pos:'tr', size:14, op:0.9, cta:'', handle:''}, tpl: '',
+  edit: {zoom:'cortes', trans:'none', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
   anim: {theme:'violeta', cartoon:'caricatura', zoom:1.2, y:0, script:'', ai:true},
 };
 try {
   const sv = JSON.parse(localStorage.getItem('editorReels.v4')||'null') || JSON.parse(localStorage.getItem('editorReels.v3')||'null');
   if (sv) {
     S.cues = sv.cues || []; if (sv.script) S.script = sv.script;
-    for (const k of ['style','music','auto','edit','anim']) if (sv[k]) Object.assign(S[k], sv[k]);
+    for (const k of ['style','music','auto','edit','anim','brand']) if (sv[k]) Object.assign(S[k], sv[k]);
+    if (sv.tpl) S.tpl = sv.tpl;
     if (sv.src) S.src = sv.src; if (sv.voiceVol != null) S.voiceVol = sv.voiceVol;
   }
 } catch(e){}
@@ -557,8 +654,17 @@ function zoomAt(t){
   for (let i=0;i<k.length;i++) if (t >= k[i].start && t < k[i].end) { idx = i; break; }
   if (z === 'cortes') { if (k.length > 1) return idx % 2 ? 1.12 : 1; return Math.floor(outTime(t) / 4.5) % 2 ? 1.12 : 1; }
   if (z === 'lento') return 1 + 0.09 * Math.min(1, outTime(t) / Math.max(1, outDur()));
+  if (z === 'clave') {
+    let base = k.length > 1 ? (idx % 2 ? 1.1 : 1) : (Math.floor(outTime(t) / 5) % 2 ? 1.08 : 1);
+    const c = activeCue(t);
+    if (c) { const words = c.text.trim().split(/\s+/), ws = wordStarts(c, words.length);
+      for (let i = 0; i < words.length; i++) { const isK = kwSet.has(norm(words[i])) || /\d|!$/.test(words[i]); if (!isK) continue; const p = (t - ws[i]) / 0.8;
+        if (p >= 0 && p < 1) { base *= 1 + 0.1 * (p < 0.12 ? p / 0.12 : 1 - (p - 0.12) / 0.88); break; } } }
+    return base;
+  }
   return 1;
 }
+function cutPoints(){ const pts = [], k = kept(); let acc = 0; for (let i = 0; i < k.length - 1; i++) { acc += k[i].end - k[i].start; pts.push(acc); } return pts; }
 
 // ================= Reloj unificado =================
 const anim = {t:0, playing:false, t0:0, dur:0, scenes:[]};
@@ -591,13 +697,24 @@ video.addEventListener('ended', () => { $('playBtn').textContent = '▶'; stopTr
 video.addEventListener('seeked', () => { if (!video.paused) startTracks(outTime(video.currentTime)); });
 
 // ================= Paneles =================
-function openPane(name){
+const PANE_TITLES = {auto:'✦ Edición automática', tpl:'❖ Plantillas', cut:'✂ Cortar', text:'T Subtítulos', style:'Aa Estilo', audio:'♪ Audio', fx:'✺ Efectos', format:'▭ Formato', anim:'☺ Video animado', export:'↓ Exportar'};
+const isMobile = () => window.innerWidth < 1000;
+let curPane = 'auto';
+function setSheet(open){ $('panel').classList.toggle('open', !!open); if (!open) document.querySelectorAll('#toolbar button').forEach(b => b.classList.remove('on')); else document.querySelectorAll('#toolbar button').forEach(b => b.classList.toggle('on', b.dataset.pane === curPane)); }
+function openPane(name, toggle){
+  if (toggle && isMobile() && curPane === name && $('panel').classList.contains('open')) { setSheet(false); return; }
+  curPane = name;
   document.querySelectorAll('#toolbar button').forEach(b => b.classList.toggle('on', b.dataset.pane === name));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + name));
-  if (window.innerWidth < 960 && mode !== 'none') $('panel').scrollIntoView({behavior:'smooth', block:'start'});
+  $('paneTitle').textContent = PANE_TITLES[name] || '';
+  $('panel').scrollTop = 0; setSheet(true);
   if (name === 'export') updateExpInfo();
 }
-document.querySelectorAll('#toolbar button').forEach(b => b.onclick = () => openPane(b.dataset.pane));
+document.querySelectorAll('#toolbar button').forEach(b => b.onclick = () => openPane(b.dataset.pane, true));
+$('sheetClose').onclick = () => setSheet(false);
+$('goVoice').onclick = () => { setSrc('voz'); openPane('audio'); toast('Carga tu video desde el inicio y tu MP3 de ElevenLabs aquí', 3500); };
+$('goExport').onclick = () => openPane('export');
+$('goTpl').onclick = () => openPane('tpl');
 $('exportPill').onclick = () => openPane('export');
 $('fmtPill').onclick = () => openPane('format');
 $('goAnim').onclick = () => openPane('anim');
@@ -609,7 +726,7 @@ $('videoFile').onchange = e => {
   if (videoURL) URL.revokeObjectURL(videoURL);
   videoFile = f; lastAnalysis = null; videoName = f.name.replace(/\.[^.]+$/, '');
   videoURL = URL.createObjectURL(f); video.src = videoURL; video.load();
-  setMode('video');
+  setMode('video'); if (isMobile()) openPane('auto');
   $('result').classList.add('hidden'); $('autoResult').classList.add('hidden'); $('transcriptBox').classList.add('hidden'); $('aiCard').classList.add('hidden');
   if (f.size > 600e6) toast(`Video grande (${(f.size/1e9).toFixed(1)} GB): todo funciona, el análisis de voz tardará un poco más.`, 4500);
 };
@@ -620,7 +737,7 @@ video.addEventListener('loadedmetadata', () => {
 video.addEventListener('error', () => { if (video.getAttribute('src')) toast('Este video no se pudo abrir en tu navegador. Prueba exportándolo como MP4.', 4500); });
 function setMode(m){
   mode = m;
-  $('drop').classList.toggle('hidden', m !== 'none'); $('editor').classList.toggle('hidden', m === 'none');
+  $('drop').classList.toggle('hidden', m !== 'none'); $('editor').classList.toggle('hidden', m === 'none'); $('tlsec').classList.toggle('hidden', m === 'none');
   $('animBack').classList.toggle('hidden', !(m === 'anim' && videoFile));
   layoutStage(); buildTimeline();
 }
@@ -640,9 +757,9 @@ function outDims(){
 }
 function layoutStage(){
   const ar = outAR(), st = $('stage');
-  const wide = window.innerWidth >= 960;
-  const maxH = wide ? window.innerHeight * 0.56 : window.innerHeight * 0.48;
-  const maxW = (wide ? window.innerWidth - 440 : window.innerWidth) - 20;
+  const wide = !isMobile(), vwr = $('viewer');
+  const maxH = wide ? Math.max(240, window.innerHeight - 52 - 150 - 70) : Math.max(220, window.innerHeight - 52 - 60 - 124 - 76);
+  const maxW = (wide ? vwr.clientWidth : window.innerWidth) - 24;
   let h = maxH, w = h * ar; if (w > maxW) { w = maxW; h = w / ar; }
   st.style.width = w + 'px'; st.style.height = h + 'px';
   const dpr = Math.min(1.75, window.devicePixelRatio || 1);
@@ -662,8 +779,17 @@ function ensureAudio(){
   duckGain = actx.createGain(); duckGain.connect(master);
   musicGain = actx.createGain(); musicGain.gain.value = 0; musicGain.connect(duckGain);
   voiceGain = actx.createGain(); voiceGain.gain.value = S.voiceVol; voiceGain.connect(master);
-  try { videoSrc = actx.createMediaElementSource(video); videoSrc.connect(videoGain); } catch(e){ console.warn(e); }
+  try { videoSrc = actx.createMediaElementSource(video); } catch(e){ console.warn(e); }
+  vIn = actx.createGain(); if (videoSrc) videoSrc.connect(vIn);
+  const hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 85;
+  const pres = actx.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 3200; pres.Q.value = 0.8; pres.gain.value = 3;
+  const comp = actx.createDynamicsCompressor(); comp.threshold.value = -26; comp.knee.value = 8; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.22;
+  const mk = actx.createGain(); mk.gain.value = 1.5;
+  hp.connect(pres); pres.connect(comp); comp.connect(mk); mk.connect(videoGain); vChain = hp;
+  setEnhance(S.auto.enhance);
 }
+let vIn = null, vChain = null;
+function setEnhance(on){ if (!vIn) return; try { vIn.disconnect(); } catch(e){} vIn.connect(on ? vChain : videoGain); }
 function decodeAudio(buf){ return new Promise((res, rej) => { const p = actx.decodeAudioData(buf, res, rej); if (p && p.then) p.then(res, rej); }); }
 function envelope(buf, fps=50){
   const d = buf.getChannelData(0), sr = buf.sampleRate, hop = Math.floor(sr/fps), n = Math.floor(d.length/hop), e = new Float32Array(n);
@@ -748,9 +874,9 @@ function wrapWords(ctx, words, maxW){
   if (cur.length) lines.push(cur); return lines;
 }
 const hasFilter = (() => { try { const c = document.createElement('canvas').getContext('2d'); c.filter = 'blur(2px)'; return c.filter === 'blur(2px)'; } catch(e) { return false; } })();
-function drawVideoLayer(ctx, W, H, t){
+function drawVideoLayer(ctx, W, H, t, extraZ){
   const vw = video.videoWidth, vh = video.videoHeight; if (!vw) return;
-  const z = zoomAt(t), lf = LOOKS[S.edit.look] ? LOOKS[S.edit.look].f : 'none', fit = S.edit.fit;
+  const z = zoomAt(t) * (extraZ || 1), lf = LOOKS[S.edit.look] ? LOOKS[S.edit.look].f : 'none', fit = S.edit.fit;
   const cover = Math.max(W/vw, H/vh), contain = Math.min(W/vw, H/vh);
   if (fit === 'fill' || Math.abs(cover - contain) / cover < 0.01) {
     const s = cover * z, dw = vw*s, dh = vh*s;
@@ -848,12 +974,39 @@ function drawProgress(ctx, W, H, ot){
 }
 function renderFrame(ctx, W, H, t){
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-  if (mode === 'anim') { drawAnim(ctx, W, H, t); drawProgress(ctx, W, H, t); return; }
-  drawVideoLayer(ctx, W, H, t);
+  if (mode === 'anim') { drawAnim(ctx, W, H, t); drawBrand(ctx, W, H, t); drawProgress(ctx, W, H, t); return; }
+  const ot = outTime(t), tr = S.edit.trans;
+  let d = 9; if (tr !== 'none') for (const p of cutPoints()) d = Math.min(d, Math.abs(ot - p));
+  const near = d < 0.18 ? 1 - d / 0.18 : 0;
+  drawVideoLayer(ctx, W, H, t, tr === 'zoom' && near ? 1 + 0.1 * near : 1);
+  if (near && tr === 'flash') { ctx.fillStyle = `rgba(255,255,255,${0.55 * near})`; ctx.fillRect(0, 0, W, H); }
+  if (near && tr === 'fade') { ctx.fillStyle = `rgba(0,0,0,${0.85 * near})`; ctx.fillRect(0, 0, W, H); }
   drawSubs(ctx, W, H, t);
-  const ot = outTime(t);
   drawHook(ctx, W, H, ot);
+  drawBrand(ctx, W, H, ot);
   drawProgress(ctx, W, H, ot);
+}
+let logoImg = null;
+function loadLogo(){ logoImg = null; if (!S.brand.logo) return; const im = new Image(); im.onload = () => { logoImg = im; }; im.src = S.brand.logo; }
+function drawBrand(ctx, W, H, ot){
+  const B = S.brand, base = Math.min(W, H);
+  if (logoImg) {
+    const w = base * B.size / 100, h = w * logoImg.naturalHeight / logoImg.naturalWidth, m = base * 0.045;
+    const x = B.pos.includes('l') ? m : W - w - m, y = B.pos.startsWith('t') ? m + (S.edit.hook && ot < S.edit.hookDur ? 0 : 0) : H - h - m - (S.edit.progress ? base*0.012 : 0);
+    ctx.save(); ctx.globalAlpha = B.op; ctx.drawImage(logoImg, x, y, w, h); ctx.restore();
+  }
+  const cta = (B.cta || '').trim(), hd = (B.handle || '').trim(); if (!cta && !hd) return;
+  const D = outDur(), st = Math.max(0, D - 2.8); if (ot < st || D < 3) return;
+  const a = Math.min(1, (ot - st) / 0.35);
+  ctx.save(); ctx.fillStyle = `rgba(0,0,0,${0.45 * a})`; ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const fs = base * 0.07, yy = H * 0.46 + (1 - a) * fs * 0.6;
+  let nl = 0;
+  if (cta) { ctx.font = fontCSS(S.style.font, fs); ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = fs * 0.4;
+    const lines = wrapWords(ctx, cta.split(/\s+/), W * 0.82).map(l => l.map(o => o.w).join(' ')); lines.forEach((l, i) => ctx.fillText(l, W/2, yy + (i - (lines.length-1)/2) * fs * 1.2)); nl = lines.length; }
+  if (hd) { ctx.shadowColor = 'transparent'; const f2 = base * 0.05; ctx.font = `700 ${f2}px Inter, sans-serif`; const tw = ctx.measureText(hd).width + f2 * 1.6, y2 = yy + (nl ? (nl - 1) / 2 * fs * 1.2 + fs * 1.5 : 0);
+    ctx.fillStyle = '#fff'; roundRect(ctx, W/2 - tw/2, y2 - f2 * 0.85, tw, f2 * 1.7, f2 * 0.85); ctx.fill(); ctx.fillStyle = '#000'; ctx.fillText(hd, W/2, y2); }
+  ctx.restore();
 }
 
 // ================= Bucle de vista previa =================
@@ -945,6 +1098,30 @@ async function makeThumbs(){
   v.removeAttribute('src'); v.load();
 }
 
+// ================= Deshacer / rehacer =================
+const hist = [], redoS = [];
+const snapState = () => JSON.stringify({cues: S.cues, segs, style: S.style, edit: S.edit});
+function updUndo(){ $('undoBtn').disabled = !hist.length; $('redoBtn').disabled = !redoS.length; }
+function snap(){ const st = snapState(); if (hist[hist.length-1] === st) return; hist.push(st); if (hist.length > 80) hist.shift(); redoS.length = 0; updUndo(); }
+function restoreState(j){ const o = JSON.parse(j); S.cues = o.cues; segs = o.segs; S.style = o.style; S.edit = o.edit; refreshKw(); persist(); renderCues(); renderSegs(); syncInputs(); layoutStage(); buildTimeline(); }
+function undo(){ if (!hist.length) return; redoS.push(snapState()); restoreState(hist.pop()); updUndo(); toast('Deshecho'); }
+function redo(){ if (!redoS.length) return; hist.push(snapState()); restoreState(redoS.pop()); updUndo(); toast('Rehecho'); }
+$('undoBtn').onclick = undo; $('redoBtn').onclick = redo;
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+  if (mode === 'none') return;
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+  if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+  if (mod) return;
+  if (e.key === ' ') { e.preventDefault(); isPlaying() ? pause() : play(); }
+  else if (e.key === 's' || e.key === 'S') { e.preventDefault(); $('splitBtn').click(); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); $('toggleHereBtn').click(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); seek(curT() - (e.shiftKey ? 0.1 : 1)); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); seek(curT() + (e.shiftKey ? 0.1 : 1)); }
+  else if (e.key === 'Escape') setSheet(false);
+});
+
 // ================= Lista de subtítulos =================
 function sortCues(){ S.cues.sort((a,b)=>a.start-b.start); }
 function renderCues(){
@@ -955,13 +1132,14 @@ function renderCues(){
     el.innerHTML = `<div class="top"><input type="number" step="0.1" min="0" class="s"><span style="color:#666">→</span><input type="number" step="0.1" min="0" class="e"><input class="em" maxlength="4" placeholder="😀"><span class="sp"></span><button class="ico go">▶</button><button class="ico del">✕</button></div><textarea rows="1"></textarea>`;
     const s = el.querySelector('.s'), e = el.querySelector('.e'), ta = el.querySelector('textarea'), em = el.querySelector('.em');
     s.value = c.start.toFixed(1); e.value = c.end.toFixed(1); ta.value = c.text; em.value = c.emoji || '';
+    s.onfocus = e.onfocus = ta.onfocus = em.onfocus = () => snap();
     s.onchange = () => { c.start = Math.max(0, +s.value||0); if (c.end <= c.start) c.end = c.start + 1; delete c.w; sortCues(); persist(); renderCues(); };
     e.onchange = () => { c.end = Math.max(c.start + 0.1, +e.value||0); delete c.w; persist(); renderCues(); };
     ta.oninput = () => { c.text = ta.value; if (c.w && c.w.length !== c.text.trim().split(/\s+/).length) delete c.w; persist(); };
     ta.onchange = () => buildTimeline();
     em.oninput = () => { c.emoji = em.value.trim(); persist(); };
     el.querySelector('.go').onclick = () => seek(c.start + 0.01);
-    el.querySelector('.del').onclick = () => { S.cues = S.cues.filter(x => x !== c); persist(); renderCues(); };
+    el.querySelector('.del').onclick = () => { snap(); S.cues = S.cues.filter(x => x !== c); persist(); renderCues(); };
     box.appendChild(el);
   });
   lastActiveId = undefined; buildTimeline();
@@ -969,11 +1147,11 @@ function renderCues(){
 $('addBtn').onclick = () => {
   const t = curT(); const next = S.cues.find(c => c.start > t);
   const c = {id:newId(), start:t, end: Math.max(Math.min(next ? next.start : t + 2, t + 2), t+0.5), text:'Nuevo subtítulo'};
-  S.cues.push(c); sortCues(); persist(); renderCues();
+  snap(); S.cues.push(c); sortCues(); persist(); renderCues();
   const ta = document.querySelector(`#cues .cue[data-id="${c.id}"] textarea`); if (ta) { ta.focus(); ta.select(); }
 };
 function confirmTap(btn, msg, fn){ if (btn.dataset.armed && Date.now() - +btn.dataset.armed < 2500) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; fn(); } else { btn.dataset.orig = btn.dataset.orig || btn.textContent; btn.dataset.armed = Date.now(); btn.textContent = msg; setTimeout(()=>{ if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; } }, 2500); } }
-$('clearBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { S.cues = []; persist(); renderCues(); });
+$('clearBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { snap(); S.cues = []; persist(); renderCues(); });
 
 // ================= Texto =================
 const norm = w => w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
@@ -1012,7 +1190,7 @@ $('pasteOk').onclick = () => {
   let avail = D ? Math.max(1, D - from) : needed; if (avail > needed * 1.6) avail = needed * 1.15;
   const weights = chunks.map(c => c.length + 4), sum = weights.reduce((a,b)=>a+b,0);
   let t = from; const out = chunks.map((txt, i) => { const d = avail * weights[i] / sum; const c = {id:newId(), start:t, end:t+d, text:txt}; t += d; return c; });
-  S.cues = replace ? out : S.cues.concat(out); sortCues(); persist(); renderCues();
+  snap(); S.cues = replace ? out : S.cues.concat(out); sortCues(); persist(); renderCues();
   $('pasteModal').classList.remove('on'); toast(`${out.length} subtítulos creados`);
 };
 
@@ -1047,7 +1225,7 @@ $('srtFile').onchange = async e => {
     const [a,b] = lines[k].split('-->'); const text = lines.slice(k+1).join(' ').replace(/<[^>]+>/g,'').trim();
     if (text) out.push({id:newId(), start:parseTime(a), end:parseTime(b.split(' ').filter(Boolean)[0]||b), text}); });
   if (!out.length) { toast('No encontré subtítulos en ese archivo'); return; }
-  S.cues = out; sortCues(); persist(); renderCues(); toast(`${out.length} subtítulos importados`);
+  snap(); S.cues = out; sortCues(); persist(); renderCues(); toast(`${out.length} subtítulos importados`);
 };
 const srtTime = t => { const ms = Math.round(t*1000), h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000), s = Math.floor(ms%60000/1000), r = ms%1000; const p = (n,l=2)=>String(n).padStart(l,'0'); return `${p(h)}:${p(m)}:${p(s)},${p(r,3)}`; };
 $('copySrt').onclick = async () => {
@@ -1250,7 +1428,7 @@ $('analyzeBtn').onclick = async () => {
   if (mode !== 'video' || !videoFile || !vdur()) { toast('Primero carga un video'); return; }
   const voiceMode = S.src === 'voz';
   if (voiceMode && !voiceBuf) { toast('Primero carga la voz en Audio'); openPane('audio'); return; }
-  const btn = $('analyzeBtn'); btn.disabled = true; pause();
+  const btn = $('analyzeBtn'); btn.disabled = true; pause(); snap();
   const A = S.auto, Dv = vdur(), script = S.script.trim();
   $('autoResult').classList.add('hidden');
   try {
@@ -1281,11 +1459,18 @@ $('analyzeBtn').onclick = async () => {
       if (Dv < D - 0.3) note += ` Tu video (${fmtShort(Dv)}) es más corto que la voz (${fmtShort(D)}): el final se corta.`;
       S.videoVol = 0; if (videoGain) videoGain.gain.value = 0; syncInputs();
     } else if (!segsSet) segs = buildSegs(A.silence ? padRegs(mergeRegs(speechRaw, A.minGap), A.pad, D) : [[0, D]], D, speechRaw, asrWords || [], 'voz');
+    let nFill = 0;
+    if (!voiceMode && A.fillers && asrOk) {
+      const fl = asrWords.filter(o => FILLERS.has(norm(o.w)));
+      fl.forEach(o => { if (applyCut(o.start - 0.02, o.end + 0.04, 'muletilla')) nFill++; });
+      if (timedWords) timedWords = timedWords.filter(o => !FILLERS.has(norm(o.w)));
+    }
     if (A.subs && timedWords && timedWords.length) { S.cues = chunkTimed(timedWords, A.wpc); persist(); renderCues(); }
     renderSegs(); buildTimeline();
     const cs = segs.filter(s => !s.keep && s.kind === 'silencio').length, ct = segs.filter(s => !s.keep && s.kind !== 'silencio').length;
     $('sumDur').textContent = `${fmtShort(Dv)} → ${fmtShort(outDur())}`; $('sumCuts').textContent = `${voiceMode ? 0 : cs + ct}`;
-    let txt = voiceMode ? 'Voz de ElevenLabs puesta sobre tu video.' : `${cs} silencios` + (ct ? ` y ${ct} tomas repetidas` : '') + ' quitados.';
+    const qs = [`${cs} silencio${cs === 1 ? '' : 's'}`]; if (ct - nFill > 0) qs.push(`${ct - nFill} toma${ct - nFill === 1 ? '' : 's'} repetida${ct - nFill === 1 ? '' : 's'}`); if (nFill) qs.push(`${nFill} muletilla${nFill === 1 ? '' : 's'}`);
+    let txt = voiceMode ? 'Voz de ElevenLabs puesta sobre tu video.' : 'Quité ' + (qs.length > 1 ? qs.slice(0, -1).join(', ') + ' y ' + qs[qs.length-1] : qs[0]) + '.';
     if (script && asrOk) txt += ` Encontré ${matched} de ${total} frases del guion.`;
     if (asrErr) txt += ` No se pudo usar el reconocimiento de voz (${asrErr}).`;
     if (A.subs && timedWords && timedWords.length) txt += ` ${S.cues.length} subtítulos creados.`;
@@ -1296,15 +1481,28 @@ $('analyzeBtn').onclick = async () => {
   } catch(err) { console.error(err); setStatus('auto', 'No se pudo completar', err.message || String(err), 0); }
   finally { btn.disabled = false; }
 };
+function applyCut(a, b, kind){
+  let changed = false;
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i]; if (!s.keep || b <= s.start || a >= s.end) continue;
+    const ca = Math.max(a, s.start), cb = Math.min(b, s.end); if (cb - ca < 0.05) continue;
+    const parts = [];
+    if (ca - s.start > 0.08) parts.push({...s, end: ca});
+    parts.push({start: ca, end: cb, keep: false, kind, text: kind === 'muletilla' ? '(muletilla)' : ''});
+    if (s.end - cb > 0.08) parts.push({...s, start: cb});
+    segs.splice(i, 1, ...parts); i += parts.length - 1; changed = true;
+  }
+  return changed;
+}
 function renderSegs(){
   const box = $('segs'); box.innerHTML = '';
   if (segs.length <= 1 && segs.every(s => s.keep)) { box.innerHTML = '<div class="empty">Sin cortes todavía.</div>'; return; }
   segs.filter(s => s.kind !== 'silencio' || s.keep).forEach(s => {
     const el = document.createElement('div'); el.className = 'seg' + (s.keep ? '' : ' off');
-    const tag = !s.keep && s.kind === 'toma' ? ' · <em>toma repetida</em>' : (!s.keep ? ' · <em>cortado</em>' : '');
+    const tag = !s.keep && s.kind === 'toma' ? ' · <em>toma repetida</em>' : (!s.keep && s.kind === 'muletilla' ? ' · <em>muletilla</em>' : (!s.keep ? ' · <em>cortado</em>' : ''));
     el.innerHTML = `<button class="tg">${s.keep ? '✓' : ''}</button><div class="mid"><div class="tm">${fmt(s.start)} – ${fmt(s.end)}${tag}</div><div class="t"></div></div><button class="ico pv">▶</button>`;
     el.querySelector('.t').textContent = s.text || (s.keep ? '(parte del video)' : '(sin texto)');
-    el.querySelector('.tg').onclick = () => { s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
+    el.querySelector('.tg').onclick = () => { snap(); s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
     el.querySelector('.pv').onclick = () => seek(s.start + 0.01);
     box.appendChild(el);
   });
@@ -1312,10 +1510,10 @@ function renderSegs(){
 $('splitBtn').onclick = () => {
   if (mode !== 'video' || !segs.length) return; const t = video.currentTime, s = segAt(t);
   if (!s || t - s.start < 0.1 || s.end - t < 0.1) { toast('Muévete un poco del borde'); return; }
-  segs.splice(segs.indexOf(s), 1, {...s, end: t}, {...s, start: t}); renderSegs(); buildTimeline(); toast('Dividido ✂️');
+  snap(); segs.splice(segs.indexOf(s), 1, {...s, end: t}, {...s, start: t}); renderSegs(); buildTimeline(); toast('Dividido ✂️');
 };
-$('toggleHereBtn').onclick = () => { if (mode !== 'video' || !segs.length) return; const s = segAt(video.currentTime); s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
-$('resetCutsBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { resetSegs(); renderSegs(); buildTimeline(); });
+$('toggleHereBtn').onclick = () => { if (mode !== 'video' || !segs.length) return; snap(); const s = segAt(video.currentTime); s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
+$('resetCutsBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { snap(); resetSegs(); renderSegs(); buildTimeline(); });
 
 // ================= ✦ IA (Claude) =================
 let sampleFn = null; const AI = {kind: null};
@@ -1352,7 +1550,7 @@ async function initAI(){
     const out = []; let batch = [], size = 0;
     const flush = async () => {
       if (!batch.length) return;
-      const parts = [`Transcribe en español, palabra por palabra, cada uno de los ${batch.length} audios adjuntos, en el mismo orden. No corrijas, no resumas y no inventes: si la persona repite una frase o se equivoca, escribe también la repetición tal cual. Usa puntuación normal. Si un audio no tiene voz, pon "". Responde SOLO con JSON: {"t": [exactamente ${batch.length} textos]}`];
+      const parts = [`Transcribe en español, palabra por palabra, cada uno de los ${batch.length} audios adjuntos, en el mismo orden. No corrijas, no resumas y no inventes: si la persona repite una frase o se equivoca, escribe también la repetición tal cual, e incluye las muletillas (eh, mmm) como palabras sueltas. Usa puntuación normal. Si un audio no tiene voz, pon "". Responde SOLO con JSON: {"t": [exactamente ${batch.length} textos]}`];
       batch.forEach(b => parts.push({inlineData: {mimeType: 'audio/wav', data: b}}));
       const r = await AI.json(parts), arr = Array.isArray(r) ? r : (r && r.t) || [];
       for (let i = 0; i < batch.length; i++) out.push(String(arr[i] || ''));
@@ -1369,6 +1567,7 @@ function updateAIUI(){
   $('animAI').closest('label').classList.toggle('hidden', !has);
   $('aiScriptRow').classList.toggle('hidden', !AI.text);
   $('engineRow').classList.toggle('hidden', !AI.transcribe);
+  $('aiTag').classList.toggle('hidden', !AI.kind); $('aiTag').textContent = AI.kind === 'gemini' ? '✦ IA Gemini' : AI.kind === 'claude' ? '✦ IA Claude' : '✦ IA';
   $('aiBadge').textContent = AI.kind === 'gemini' ? '✦ IA activa: Gemini (Firebase)' : AI.kind === 'claude' ? '✦ IA activa: Claude' : AI.kind ? '✦ IA activa' : '';
   renderStyleUI();
 }
@@ -1389,6 +1588,7 @@ async function aiIdeas(manual){
   try {
     const r = await AI.json(prompt);
     if (r && typeof r === 'object') {
+      snap();
       if (r.hook) S.edit.hook = String(r.hook).slice(0, 80);
       if (Array.isArray(r.keywords)) { S.style.keywords = r.keywords.map(String).slice(0, 14); refreshKw(); }
       if (Array.isArray(r.emojis)) { S.cues.forEach(c => delete c.emoji); r.emojis.forEach(o => { const c = S.cues[+o.i]; if (c && o.e) c.emoji = String(o.e).slice(0, 4); }); }
@@ -1497,6 +1697,7 @@ $('makeAnim').onclick = async () => {
     if (S.edit.format === 'original') S.edit.format = '9:16';
     setMode('anim'); persist(); syncInputs();
     setStatus('anim', '¡Video animado listo! ✔', 'Dale ▶ arriba para verlo, luego Exportar.', 1);
+    if (isMobile()) setTimeout(() => setSheet(false), 900);
     window.scrollTo({top:0, behavior:'smooth'});
   } catch(err) { console.error(err); setStatus('anim', 'No se pudo crear', err.message || String(err), 0); }
   finally { btn.disabled = false; }
@@ -1583,6 +1784,8 @@ const bindings = [
   ['pad', () => S.auto.pad, v => S.auto.pad = v, v => v.toFixed(2)+'s', false],
   ['sens', () => S.auto.sens, v => S.auto.sens = v, v => Math.round(v*100)+'%', false],
   ['autoWpc', () => S.auto.wpc, v => S.auto.wpc = v, v => String(v), false],
+  ['logoSize', () => S.brand.size, v => S.brand.size = v, v => v + '%', false],
+  ['logoOp', () => S.brand.op, v => S.brand.op = v, v => Math.round(v*100) + '%', false],
   ['hookDur', () => S.edit.hookDur, v => S.edit.hookDur = v, v => v.toFixed(1)+'s', false],
   ['phZoom', () => S.anim.zoom, v => { S.anim.zoom = v; if (S.anim.cartoon !== 'ia') makeCartoon(); }, v => v.toFixed(2)+'×', false],
   ['phY', () => S.anim.y, v => { S.anim.y = v; if (S.anim.cartoon !== 'ia') makeCartoon(); }, v => (v>0?'+':'')+Math.round(v*100), false],
@@ -1590,7 +1793,7 @@ const bindings = [
 function chipGroup(id, options, get, set, after){
   const box = $(id); box.innerHTML = '';
   Object.entries(options).forEach(([k, v]) => { const b = document.createElement('button'); b.className = 'chip' + (String(get()) === String(k) ? ' on' : ''); b.textContent = typeof v === 'string' ? v : v.n;
-    b.onclick = () => { set(k); persist(); syncInputs(); if (after) after(); }; box.appendChild(b); });
+    b.onclick = () => { snap(); set(k); persist(); syncInputs(); if (after) after(); }; box.appendChild(b); });
 }
 function renderStyleUI(){
   const pbox = $('presets'); pbox.innerHTML = '';
@@ -1602,17 +1805,31 @@ function renderStyleUI(){
     const sp = b.querySelector('.pv span'); sp.textContent = p.upper ? 'HOLA MUNDO' : 'Hola mundo';
     sp.style.cssText = `font-family:"${p.font}";font-weight:${F.w};font-style:${F.it?'italic':'normal'};text-shadow:${shadow};${p.bg==='box'?'background:rgba(10,10,14,.65);padding:4px 8px;border-radius:7px;':''}${p.highlight==='color'?'color:#ffe066;':''}`;
     b.querySelector('.nm').textContent = name;
-    b.onclick = () => { Object.assign(S.style, p); persist(); syncInputs(); loadFonts(); };
+    b.onclick = () => { snap(); Object.assign(S.style, p); persist(); syncInputs(); loadFonts(); };
     pbox.appendChild(b);
   });
   const fbox = $('fonts'); fbox.innerHTML = '';
   Object.entries(FONTS).forEach(([f, F]) => { const b = document.createElement('button'); b.className = 'font' + (S.style.font === f ? ' on' : '');
     b.innerHTML = `<b></b><small></small>`; const bb = b.querySelector('b'); bb.textContent = 'Aa'; bb.style.cssText = `font-family:"${f}";font-weight:${F.w};font-style:${F.it?'italic':'normal'}`;
-    b.querySelector('small').textContent = F.label; b.onclick = () => { S.style.font = f; persist(); syncInputs(); loadFonts(); }; fbox.appendChild(b); });
+    b.querySelector('small').textContent = F.label; b.onclick = () => { snap(); S.style.font = f; persist(); syncInputs(); loadFonts(); }; fbox.appendChild(b); });
   chipGroup('bgChips', BGS, () => S.style.bg, v => S.style.bg = v);
   chipGroup('animChips', ANIMS, () => S.style.anim, v => S.style.anim = v);
   chipGroup('hlChips', HLS, () => S.style.highlight, v => S.style.highlight = v);
   chipGroup('zoomChips', ZOOMS, () => S.edit.zoom, v => S.edit.zoom = v);
+  chipGroup('transChips', TRANS, () => S.edit.trans, v => S.edit.trans = v);
+  chipGroup('logoPosChips', LOGOPOS, () => S.brand.pos, v => S.brand.pos = v);
+  for (const id of ['tpls', 'homeTpls']) {
+    const box = $(id); box.innerHTML = '';
+    Object.entries(TEMPLATES).forEach(([k, t]) => {
+      const F = FONTS[t.style.font], b = document.createElement('button'); b.className = 'tpl' + (S.tpl === k ? ' on' : '');
+      b.innerHTML = '<div class="pv"><span></span></div><div class="nm"></div><div class="ds"></div>';
+      b.querySelector('.pv').style.background = t.bg;
+      const sp = b.querySelector('.pv span'); sp.textContent = t.style.upper ? 'ASÍ SE VE' : 'Así se ve';
+      sp.style.cssText = `font-family:"${t.style.font}";font-weight:${F.w};font-style:${F.it?'italic':'normal'};text-shadow:0 2px 8px rgba(0,0,0,.6);${t.style.bg==='box'?'background:rgba(10,10,14,.6);padding:4px 8px;border-radius:7px;':''}`;
+      b.querySelector('.nm').textContent = t.n; b.querySelector('.ds').textContent = t.d;
+      b.onclick = () => applyTemplate(k); box.appendChild(b);
+    });
+  }
   chipGroup('lookChips', LOOKS, () => S.edit.look, v => S.edit.look = v);
   chipGroup('fitChips', FITS, () => S.edit.fit, v => S.edit.fit = v);
   chipGroup('resChips', RESS, () => S.edit.res, v => S.edit.res = +v, updateFmtInfo);
@@ -1625,11 +1842,21 @@ function renderStyleUI(){
   const tb = $('themes'); tb.innerHTML = '';
   Object.entries(THEMES).forEach(([k, t]) => { const b = document.createElement('button'); b.className = 'theme' + (S.anim.theme === k ? ' on' : ''); b.style.background = `linear-gradient(135deg, ${t.c[0]}, ${t.c[1]})`; b.textContent = t.n; b.onclick = () => { S.anim.theme = k; persist(); renderStyleUI(); }; tb.appendChild(b); });
 }
+function applyTemplate(k){
+  const t = TEMPLATES[k]; if (!t) return; snap();
+  Object.assign(S.style, t.style); Object.assign(S.edit, t.edit); Object.assign(S.auto, t.auto || {}); S.tpl = k;
+  if (k === 'marca' && !S.brand.cta) S.brand.cta = 'Escríbenos y pide el tuyo';
+  persist(); syncInputs(); loadFonts(); buildTimeline();
+  toast(mode === 'none' ? `Plantilla "${t.n}" lista. Ahora carga tu video` : `Plantilla "${t.n}" aplicada ✔`);
+}
 function syncInputs(){
   bindings.forEach(([id, get, , f]) => { $(id).value = get(); $(id+'O').textContent = f(get()); });
   $('color').value = S.style.color; $('hl').value = S.style.hl;
   $('upper').checked = S.style.upper; $('showEmoji').checked = S.style.emoji; $('showKw').checked = S.style.kw;
   $('loop').checked = S.music.loop; $('duck').checked = S.music.duck; $('progressBar').checked = S.edit.progress;
+  $('optFillers').checked = S.auto.fillers; $('enhance').checked = S.auto.enhance;
+  if ($('ctaText').value !== S.brand.cta) $('ctaText').value = S.brand.cta; if ($('ctaHandle').value !== S.brand.handle) $('ctaHandle').value = S.brand.handle;
+  $('logoRemove').classList.toggle('hidden', !S.brand.logo); $('logoPrev').classList.toggle('hidden', !S.brand.logo); if (S.brand.logo) $('logoPrev').src = S.brand.logo;
   $('optSilence').checked = S.auto.silence; $('optTakes').checked = S.auto.takes; $('optSubs').checked = S.auto.subs; $('optAI').checked = S.auto.ai; $('animAI').checked = S.anim.ai;
   if ($('script').value !== S.script) $('script').value = S.script;
   if ($('animScript').value !== S.anim.script) $('animScript').value = S.anim.script;
@@ -1640,11 +1867,20 @@ let musicT;
 bindings.forEach(([id, get, set, f, restart]) => $(id).addEventListener('input', e => { const v = +e.target.value; set(v); $(id+'O').textContent = f(v); persist();
   if (restart) { buildTimeline(); clearTimeout(musicT); musicT = setTimeout(()=>{ if (isPlaying()) startTracks(outTime(curT())); }, 120); } }));
 ['color','hl'].forEach(id => $(id).addEventListener('input', e => { S.style[id] = e.target.value; persist(); }));
-[['upper','style','upper'],['showEmoji','style','emoji'],['showKw','style','kw'],['loop','music','loop'],['duck','music','duck'],['progressBar','edit','progress'],['optSilence','auto','silence'],['optTakes','auto','takes'],['optSubs','auto','subs'],['optAI','auto','ai'],['animAI','anim','ai']]
-  .forEach(([id, g, k]) => $(id).addEventListener('change', e => { S[g][k] = e.target.checked; persist(); if (id === 'loop' && isPlaying()) startTracks(outTime(curT())); if (id === 'upper') renderStyleUI(); }));
+[['optFillers','auto','fillers'],['enhance','auto','enhance'],['upper','style','upper'],['showEmoji','style','emoji'],['showKw','style','kw'],['loop','music','loop'],['duck','music','duck'],['progressBar','edit','progress'],['optSilence','auto','silence'],['optTakes','auto','takes'],['optSubs','auto','subs'],['optAI','auto','ai'],['animAI','anim','ai']]
+  .forEach(([id, g, k]) => $(id).addEventListener('change', e => { S[g][k] = e.target.checked; persist(); if (id === 'enhance') setEnhance(e.target.checked); if (id === 'loop' && isPlaying()) startTracks(outTime(curT())); if (id === 'upper') renderStyleUI(); }));
 $('script').addEventListener('input', e => { S.script = e.target.value; persist(); });
 $('animScript').addEventListener('input', e => { S.anim.script = e.target.value; persist(); });
 $('hookText').addEventListener('input', e => { S.edit.hook = e.target.value; persist(); });
+$('ctaText').addEventListener('input', e => { S.brand.cta = e.target.value; persist(); });
+$('ctaHandle').addEventListener('input', e => { S.brand.handle = e.target.value; persist(); });
+$('logoFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = '';
+  const im = new Image(); im.src = URL.createObjectURL(f); try { await im.decode(); } catch(err) { toast('No pude abrir esa imagen'); return; }
+  const k = Math.min(1, 320 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas'); c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+  c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); S.brand.logo = c.toDataURL('image/png'); persist(); loadLogo(); syncInputs(); toast('Logo listo ✔');
+};
+$('logoRemove').onclick = () => { S.brand.logo = null; persist(); loadLogo(); syncInputs(); };
 function loadFonts(){ if (document.fonts) Object.keys(FONTS).forEach(f => document.fonts.load(fontCSS(f, 40)).catch(()=>{})); }
 loadFonts();
 
@@ -1738,7 +1974,8 @@ $('saveBtn').onclick = async () => {
 };
 
 // ================= Inicio =================
-refreshKw(); syncInputs(); renderCues(); renderSegs(); setSrc(S.src); layoutStage(); initAI();
+refreshKw(); loadLogo(); syncInputs(); renderCues(); renderSegs(); setSrc(S.src); layoutStage(); initAI(); updUndo();
+if (!isMobile()) openPane('auto'); else setSheet(false);
 requestAnimationFrame(loop);
 })();
 </script>
