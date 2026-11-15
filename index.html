@@ -250,6 +250,7 @@ a{color:var(--acc2)}
         <h3>✦ Edición automática</h3>
         <p class="sub">Escucha la voz, quita silencios y tomas repetidas, y crea subtítulos sincronizados.</p>
         <p class="note" id="aiBadge" style="margin-top:-6px;color:var(--acc2)"></p>
+        <div class="row hidden" id="testAIrow" style="margin:-2px 0 10px;align-items:center"><button class="btn" id="testAI" style="padding:7px 11px;font-size:12.5px">Probar conexión con la IA</button><span class="note" id="testAIres" style="margin:0;flex:1"></span></div>
         <div class="seg2" id="srcSeg">
           <button data-src="video">🎥 Mi voz del video</button>
           <button data-src="voz">🎙️ Voz ElevenLabs</button>
@@ -474,7 +475,7 @@ a{color:var(--acc2)}
         <h3>Exportar</h3>
         <p class="sub" id="expInfo"></p>
         <button class="btn white big" id="exportBtn">Crear video final</button>
-        <p class="note">Se graba reproduciendo el video final una vez. <b>Deja la pantalla encendida y esta pestaña abierta.</b></p>
+        <p class="note" id="expNote">Se exporta cuadro por cuadro para que quede fluido. En el celular tarda más o menos el doble de lo que dura el video. <b>Deja la pantalla encendida y esta pestaña abierta.</b></p>
         <div id="exportBox" class="hidden">
           <div class="progress"><div id="prog"></div></div>
           <div class="row" style="justify-content:space-between;align-items:center"><span class="note" id="progTxt">Preparando…</span><button class="btn danger" id="cancelExport">Cancelar</button></div>
@@ -623,7 +624,7 @@ S.cues.forEach(c => c.id = c.id || newId());
 
 let mode = 'none';          // 'video' | 'anim'
 let segs = [];
-let videoFile = null, videoURL = null, videoName = 'video', lastAnalysis = null;
+let videoFile = null, videoURL = null, videoName = 'video', lastAnalysis = null, videoAudioBuf = null, videoAudioTried = false;
 
 const toastEl = $('toast'); let toastT;
 function toast(msg, ms=2400){ toastEl.textContent = msg; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(()=>toastEl.classList.remove('on'), ms); }
@@ -724,7 +725,7 @@ $('videoFile').onchange = e => {
   const f = e.target.files[0]; if (!f) return; e.target.value = '';
   if (anim.playing) pause();
   if (videoURL) URL.revokeObjectURL(videoURL);
-  videoFile = f; lastAnalysis = null; videoName = f.name.replace(/\.[^.]+$/, '');
+  videoFile = f; lastAnalysis = null; videoAudioBuf = null; videoAudioTried = false; videoName = f.name.replace(/\.[^.]+$/, '');
   videoURL = URL.createObjectURL(f); video.src = videoURL; video.load();
   setMode('video'); if (isMobile()) openPane('auto');
   $('result').classList.add('hidden'); $('autoResult').classList.add('hidden'); $('transcriptBox').classList.add('hidden'); $('aiCard').classList.add('hidden');
@@ -1265,7 +1266,7 @@ function captureAudioFast(onP){
 }
 async function videoAudio16k(){
   ensureAudio(); try { await actx.resume(); } catch(e){}
-  if (videoFile.size < 600e6) { try { return to16k(await decodeAudio(await videoFile.arrayBuffer())); } catch(e) { console.warn('decode falló, uso captura', e); } }
+  if (videoFile.size < 600e6) { try { videoAudioBuf = await decodeAudio(await videoFile.arrayBuffer()); return to16k(videoAudioBuf); } catch(e) { console.warn('decode falló, uso captura', e); } }
   return await captureAudioFast(p => setStatus('auto', 'Leyendo el audio del video…', `${Math.round(p*100)}% · video grande, lo leo a doble velocidad`, 0.02 + p*0.08));
 }
 function detectSpeech(x, sens){
@@ -1376,8 +1377,9 @@ function asrChunks(speechRaw, D){
     const last = chunks[chunks.length-1]; if (last && r[1] - last[1] < 0.2 && r[1] - last[0] <= 24) last[1] = r[1]; else chunks.push([r[0], r[1]]); });
   return chunks.map(c => [Math.max(0, c[0] - 0.2), Math.min(D, c[1] + 0.2)]);
 }
+let asrInfo = {engine: '', error: ''};
 async function runASR(x16, speechRaw, D, pfx, label){
-  const chunks = asrChunks(speechRaw, D), words = [], fullTxt = [];
+  const chunks = asrChunks(speechRaw, D), words = [], fullTxt = []; asrInfo = {engine: '', error: ''};
   const addText = (txt, a, b, s0, e0) => { txt = cleanRepeats(txt || ''); if (!norm(txt)) return; fullTxt.push(`[${fmtShort(s0)}] ${txt}`); words.push(...placeWords(txt, Math.max(a, s0), Math.min(b, Math.max(e0, s0 + 0.2)), speechRaw)); };
   let done = false;
   if (AI.transcribe && S.auto.engine !== 'local') {
@@ -1387,7 +1389,8 @@ async function runASR(x16, speechRaw, D, pfx, label){
       chunks.forEach(([a, b], k) => addText(texts[k], a, b, a, b));
       done = words.length > 0;
       if (!done) throw new Error('Gemini no devolvió texto');
-    } catch(e) { console.warn('Gemini falló, uso el modelo local', e); words.length = 0; fullTxt.length = 0; toast('Gemini no respondió; uso el reconocimiento del celular', 3000); }
+      asrInfo.engine = 'gemini';
+    } catch(e) { console.warn('Gemini falló, uso el modelo local', e); words.length = 0; fullTxt.length = 0; asrInfo.error = aiErrHint(e); toast('⚠ Gemini falló: ' + asrInfo.error, 6000); }
   }
   if (!done) {
     setStatus(pfx, 'Preparando el reconocimiento de voz…', 'La primera vez descarga el modelo (~65 MB).', 0.1);
@@ -1400,6 +1403,7 @@ async function runASR(x16, speechRaw, D, pfx, label){
       parts.forEach(p => addText(p.text, a, b, a + (p.timestamp[0] ?? 0), a + (p.timestamp[1] ?? (b - a))));
     }
   }
+  if (!asrInfo.engine) asrInfo.engine = 'local';
   words.sort((p, q) => p.start - q.start);
   $('transcript').textContent = fullTxt.join('\n') || '(no se entendieron palabras)'; $('transcriptBox').classList.remove('hidden');
   return words;
@@ -1431,6 +1435,7 @@ $('analyzeBtn').onclick = async () => {
   const btn = $('analyzeBtn'); btn.disabled = true; pause(); snap();
   const A = S.auto, Dv = vdur(), script = S.script.trim();
   $('autoResult').classList.add('hidden');
+  if (!script && A.subs) toast('Sin guion, los subtítulos dependen de lo que entienda la IA. Con guion salen exactos.', 4500);
   try {
     const key = voiceMode ? voiceFile : videoFile, cache = lastAnalysis && lastAnalysis.key === key ? lastAnalysis : null;
     let x16;
@@ -1473,7 +1478,9 @@ $('analyzeBtn').onclick = async () => {
     let txt = voiceMode ? 'Voz de ElevenLabs puesta sobre tu video.' : 'Quité ' + (qs.length > 1 ? qs.slice(0, -1).join(', ') + ' y ' + qs[qs.length-1] : qs[0]) + '.';
     if (script && asrOk) txt += ` Encontré ${matched} de ${total} frases del guion.`;
     if (asrErr) txt += ` No se pudo usar el reconocimiento de voz (${asrErr}).`;
-    if (A.subs && timedWords && timedWords.length) txt += ` ${S.cues.length} subtítulos creados.`;
+    if (A.subs && timedWords && timedWords.length) txt += ` ${S.cues.length} subtítulos creados${script && matched ? ' con el texto exacto de tu guion' : ''}.`;
+    if (asrInfo.engine === 'gemini') txt += ' Escuchado con ✦ Gemini.';
+    else if (asrInfo.engine === 'local') txt += (asrInfo.error ? ` ⚠ Gemini no funcionó (${asrInfo.error}), así que usé el modelo del celular, que es menos preciso.` : ' Escuchado con el modelo del celular (menos preciso que Gemini).') + (!script ? ' Pega tu guion para que los subtítulos salgan exactos.' : '');
     $('sumNote').textContent = txt + note; $('autoResult').classList.remove('hidden');
     setStatus('auto', '¡Listo! ✔', 'Dale ▶ para verlo.', 1);
     seek(kept()[0] ? kept()[0].start : 0);
@@ -1561,12 +1568,26 @@ async function initAI(){
   };
   updateAIUI();
 }
+function aiErrHint(e){
+  const m = String((e && (e.message || e.code)) || e || '');
+  if (/api.?key|API_KEY|403|permission|PERMISSION|not been used|disabled|SERVICE_DISABLED|firebasevertexai|firebaseml/i.test(m)) return 'falta activar AI Logic (Gemini Developer API) en Firebase';
+  if (/404|not found|NOT_FOUND|model/i.test(m)) return 'el modelo de Gemini no está disponible';
+  if (/429|quota|RESOURCE_EXHAUSTED|rate/i.test(m)) return 'se alcanzó el límite gratis de Gemini por ahora; intenta en unos minutos';
+  if (/network|fetch|Failed to fetch|offline/i.test(m)) return 'no hay conexión a internet';
+  return m.slice(0, 140) || 'error desconocido';
+}
+$('testAI').onclick = async () => {
+  const r = $('testAIres'); r.textContent = 'Probando…'; r.style.color = '';
+  try { const t = await AI.text('Responde solo con la palabra: listo'); r.textContent = '✔ Gemini responde bien' + (t ? '' : ''); r.style.color = 'var(--acc2)'; }
+  catch(e) { r.textContent = '✖ ' + aiErrHint(e); r.style.color = 'var(--bad)'; }
+};
 function updateAIUI(){
   const has = !!AI.json;
   $('optAI').closest('label').classList.toggle('hidden', !has);
   $('animAI').closest('label').classList.toggle('hidden', !has);
   $('aiScriptRow').classList.toggle('hidden', !AI.text);
   $('engineRow').classList.toggle('hidden', !AI.transcribe);
+  $('testAIrow').classList.toggle('hidden', AI.kind !== 'gemini');
   $('aiTag').classList.toggle('hidden', !AI.kind); $('aiTag').textContent = AI.kind === 'gemini' ? '✦ IA Gemini' : AI.kind === 'claude' ? '✦ IA Claude' : '✦ IA';
   $('aiBadge').textContent = AI.kind === 'gemini' ? '✦ IA activa: Gemini (Firebase)' : AI.kind === 'claude' ? '✦ IA activa: Claude' : AI.kind ? '✦ IA activa' : '';
   renderStyleUI();
@@ -1893,8 +1914,136 @@ function pickMime(){
   return '';
 }
 const waitSeek = t => new Promise(r => { const h = () => { video.removeEventListener('seeked', h); r(); }; video.addEventListener('seeked', h); video.currentTime = t; setTimeout(r, 1500); });
+function srcOfOut(o){ if (mode === 'anim') return o; let acc = 0; for (const s of segs) { if (!s.keep) continue; const L = s.end - s.start; if (o < acc + L) return s.start + (o - acc); acc += L; } const k = kept(); return k.length ? k[k.length-1].end : o; }
+async function smoothSupport(W, H){
+  if (!window.VideoEncoder || !window.AudioEncoder || !window.VideoFrame || !window.AudioData) return null;
+  if (mode === 'video' && !video.requestVideoFrameCallback) return null;
+  let vcfg = null;
+  for (const codec of ['avc1.640033', 'avc1.640028', 'avc1.4d0028', 'avc1.42e01f']) {
+    const c = {codec, width: W, height: H, bitrate: W * H > 1.5e6 ? 14e6 : 9e6, framerate: 30};
+    try { if ((await VideoEncoder.isConfigSupported(c)).supported) { vcfg = c; break; } } catch(e){}
+  }
+  if (!vcfg) return null;
+  let acfg = null, acodec = null;
+  for (const [codec, mc] of [['mp4a.40.2', 'aac'], ['opus', 'opus']]) {
+    const c = {codec, sampleRate: 48000, numberOfChannels: 2, bitrate: 192000};
+    try { if ((await AudioEncoder.isConfigSupported(c)).supported) { acfg = c; acodec = mc; break; } } catch(e){}
+  }
+  if (!acfg) return null;
+  return {vcfg, acfg, acodec};
+}
+async function mixAudio(D){
+  const sr = 48000, oc = new OfflineAudioContext(2, Math.max(1, Math.ceil(D * sr)), sr), out = oc.createGain(); out.connect(oc.destination);
+  if (mode === 'video' && S.videoVol > 0) {
+    if (!videoAudioBuf && !videoAudioTried && videoFile && videoFile.size < 600e6) { videoAudioTried = true; try { ensureAudio(); videoAudioBuf = await decodeAudio(await videoFile.arrayBuffer()); } catch(e) { console.warn('sin audio', e); } }
+    if (videoAudioBuf) {
+      const vg = oc.createGain(); vg.gain.value = S.videoVol; vg.connect(out); let inp = vg;
+      if (S.auto.enhance) { const hp = oc.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 85; const pr = oc.createBiquadFilter(); pr.type = 'peaking'; pr.frequency.value = 3200; pr.Q.value = 0.8; pr.gain.value = 3;
+        const cp = oc.createDynamicsCompressor(); cp.threshold.value = -26; cp.knee.value = 8; cp.ratio.value = 3.5; cp.attack.value = 0.004; cp.release.value = 0.22; const mk = oc.createGain(); mk.gain.value = 1.5;
+        hp.connect(pr); pr.connect(cp); cp.connect(mk); mk.connect(vg); inp = hp; }
+      let acc = 0; const f = 0.012;
+      for (const sg of (kept().length ? kept() : [{start:0, end:vdur()}])) {
+        const L = sg.end - sg.start; if (L <= 0.02) continue;
+        const src = oc.createBufferSource(); src.buffer = videoAudioBuf; const g = oc.createGain(); src.connect(g); g.connect(inp);
+        g.gain.setValueAtTime(0, acc); g.gain.linearRampToValueAtTime(1, acc + f); g.gain.setValueAtTime(1, Math.max(acc + f, acc + L - f)); g.gain.linearRampToValueAtTime(0, acc + L);
+        src.start(acc, sg.start, L); acc += L;
+      }
+    }
+  }
+  if (useVoice()) { const src = oc.createBufferSource(); src.buffer = voiceBuf; const g = oc.createGain(); g.gain.value = S.voiceVol; src.connect(g); g.connect(out); src.start(0); }
+  if (musicBuf) {
+    const m = S.music, bd = musicBuf.duration, src = oc.createBufferSource(); src.buffer = musicBuf; src.loop = m.loop; if (m.loop) { src.loopStart = 0; src.loopEnd = bd; }
+    const mg = oc.createGain(), dk = oc.createGain(); src.connect(mg); mg.connect(dk); dk.connect(out);
+    mg.gain.setValueAtTime(musicGainAt(0), 0);
+    const fi = Math.max(0.05, m.fadeIn), fo = Math.max(0.05, m.fadeOut), pts = [m.start, m.start + fi, D - fo, D];
+    if (!m.loop) { const e = m.start + (bd - m.offset); pts.push(e - fo, e); }
+    pts.filter(p => p > 0 && p <= D).sort((a, b) => a - b).forEach(p => mg.gain.linearRampToValueAtTime(musicGainAt(p), p));
+    if (S.music.duck) { let last = -1; dk.gain.setValueAtTime(1, 0);
+      for (let t = 0; t < D; t += 0.1) { const sp = useVoice() ? (envAt(voiceEnv, t) > 0.12 || envAt(voiceEnv, t + 0.15) > 0.12) : (mode === 'video' && !!activeCue(srcOfOut(t))); const v = sp ? 0.45 : 1; if (v !== last) { dk.gain.setTargetAtTime(v, t, 0.15); last = v; } } }
+    src.start(Math.max(0, m.start), m.loop ? m.offset % bd : m.offset);
+  }
+  return await oc.startRendering();
+}
+async function exportSmooth(sup, W, H){
+  const {Muxer, ArrayBufferTarget} = await import('./lib/mp4-muxer.js');
+  const fps = 30, total = outDur(), N = Math.max(1, Math.round(total * fps));
+  const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H; const cx = canvas.getContext('2d');
+  const muxer = new Muxer({target: new ArrayBufferTarget(), video: {codec: 'avc', width: W, height: H, frameRate: fps}, audio: {codec: sup.acodec, numberOfChannels: 2, sampleRate: 48000}, fastStart: 'in-memory', firstTimestampBehavior: 'offset'});
+  const job = {cancelled: false}; exporting = job; let encErr = null;
+  $('exportBox').classList.remove('hidden'); $('result').classList.add('hidden'); $('exportBtn').disabled = true; $('prog').style.width = '0%';
+  const showP = (f, txt) => { $('prog').style.width = (f * 100).toFixed(1) + '%'; $('progTxt').textContent = txt; };
+  job.cancel = () => { job.cancelled = true; };
+  try {
+    // 1) audio mezclado sin cortes bruscos
+    showP(0.01, 'Mezclando el audio…');
+    const abuf = await mixAudio(total);
+    const aenc = new AudioEncoder({output: (c, m) => muxer.addAudioChunk(c, m), error: e => { encErr = e; }}); aenc.configure(sup.acfg);
+    const c0 = abuf.getChannelData(0), c1 = abuf.numberOfChannels > 1 ? abuf.getChannelData(1) : c0, F = 1024;
+    for (let i = 0; i < abuf.length; i += F) {
+      const n = Math.min(F, abuf.length - i), data = new Float32Array(n * 2); data.set(c0.subarray(i, i + n), 0); data.set(c1.subarray(i, i + n), n);
+      const ad = new AudioData({format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(i / 48000 * 1e6), data}); aenc.encode(ad); ad.close();
+      if (aenc.encodeQueueSize > 40) await new Promise(r => setTimeout(r, 0));
+    }
+    await aenc.flush(); if (encErr) throw encErr;
+    // 2) video cuadro por cuadro
+    const venc = new VideoEncoder({output: (c, m) => muxer.addVideoChunk(c, m), error: e => { encErr = e; }}); venc.configure(sup.vcfg);
+    let n = 0;
+    const encodeAt = (st, ot) => { renderFrame(cx, W, H, st); const vf = new VideoFrame(canvas, {timestamp: Math.round(ot * 1e6), duration: Math.round(1e6 / fps)}); venc.encode(vf, {keyFrame: n % 60 === 0}); vf.close(); n++; };
+    const drain = () => new Promise(r => { const w = () => (venc.encodeQueueSize <= 3 || encErr) ? r() : setTimeout(w, 5); w(); });
+    if (mode === 'anim') {
+      while (n < N && !job.cancelled) { encodeAt(n / fps, n / fps); if (venc.encodeQueueSize > 6) await drain(); if (n % 10 === 0) { showP(0.05 + 0.9 * n / N, `Creando cuadros… ${Math.round(n / N * 100)}%`); await new Promise(r => setTimeout(r, 0)); } if (encErr) throw encErr; }
+    } else {
+      const parts = kept().length ? kept() : [{start: 0, end: vdur()}]; let pOut = 0;
+      const rate = isMobile() ? 0.5 : 1; video.muted = true;
+      for (const p of parts) {
+        if (job.cancelled) break;
+        const pEndOut = pOut + (p.end - p.start);
+        await waitSeek(p.start + 0.001);
+        await new Promise(resolve => {
+          let finished = false;
+          const emit = mt => { while (n < N) { const ot = n / fps; if (ot >= pEndOut - 1e-6) break; const st = p.start + (ot - pOut); if (st > mt + 0.5 / fps) break; encodeAt(st, ot); } };
+          const end = () => { if (finished) return; finished = true; video.pause(); video.removeEventListener('ended', end); emit(p.end + 1); resolve(); };
+          const onFrame = async (now, meta) => {
+            if (finished) return;
+            if (job.cancelled || encErr) { end(); return; }
+            emit(meta.mediaTime);
+            showP(0.05 + 0.9 * n / N, `Creando cuadros… ${Math.round(n / N * 100)}% · ${fmtShort(n / fps)} / ${fmtShort(total)}`);
+            if (n / fps >= pEndOut - 1e-6 || meta.mediaTime >= p.end - 0.5 / fps) { end(); return; }
+            if (venc.encodeQueueSize > 6) { video.pause(); await drain(); if (finished) return; video.requestVideoFrameCallback(onFrame); video.play().catch(() => {}); return; }
+            video.requestVideoFrameCallback(onFrame);
+          };
+          video.addEventListener('ended', end);
+          emit(video.currentTime);
+          video.requestVideoFrameCallback(onFrame); video.playbackRate = rate; video.play().catch(end);
+        });
+        pOut = pEndOut;
+      }
+      video.muted = false; video.playbackRate = 1;
+    }
+    if (job.cancelled) throw {cancelled: true};
+    while (n < N) encodeAt(srcOfOut(Math.min(total, n / fps)), n / fps);
+    showP(0.97, 'Terminando el archivo…');
+    await venc.flush(); if (encErr) throw encErr;
+    muxer.finalize();
+    resultExt = 'mp4'; resultBlob = new Blob([muxer.target.buffer], {type: 'video/mp4'});
+    if (resultURL) URL.revokeObjectURL(resultURL); resultURL = URL.createObjectURL(resultBlob);
+    $('resultVideo').src = resultURL; $('result').classList.remove('hidden');
+    $('resultInfo').textContent = `Listo: ${W}×${H}, 30 cuadros por segundo, ${fmtShort(total)}, ${(resultBlob.size / 1048576).toFixed(1)} MB, MP4.`;
+    toast('¡Video listo y fluido!');
+    return true;
+  } catch(e) {
+    if (e && e.cancelled) { toast('Exportación cancelada'); return true; }
+    console.warn('Exportación fluida falló', e); toast('La exportación fluida falló en este navegador; uso el método anterior', 4000); return false;
+  } finally {
+    video.muted = false; video.playbackRate = 1; exporting = null; $('exportBtn').disabled = false; $('exportBox').classList.add('hidden'); $('playBtn').textContent = '▶';
+  }
+}
 $('exportBtn').onclick = async () => {
   if (mode === 'none') { toast('Primero carga un video o crea uno animado'); return; }
+  pause();
+  if (document.fonts) { try { await document.fonts.load(fontCSS(S.style.font, 40)); await document.fonts.ready; } catch(e){} }
+  { const d = outDims(); const sup = await smoothSupport(d.W, d.H); if (sup && await exportSmooth(sup, d.W, d.H)) return; }
+  $('expNote').textContent = 'Tu navegador no permite la exportación cuadro por cuadro; se graba en tiempo real (puede verse menos fluido). Para mejor resultado usa Chrome o Safari actualizados.';
   const mime = pickMime(), canvas = document.createElement('canvas');
   if (mime === null || !canvas.captureStream) { toast('Tu navegador no permite exportar video. Prueba con Chrome o Safari actualizado.', 4000); return; }
   ensureAudio(); try { await actx.resume(); } catch(e){}
