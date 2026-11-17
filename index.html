@@ -1537,7 +1537,12 @@ async function initAI(){
   else if (!sampleFn && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
     try {
       const m = await import('./lib/firebase-ai.js');
-      const app = m.initializeApp(window.FIREBASE_CONFIG), ai = m.getAI(app, {backend: new m.GoogleAIBackend()});
+      const app = m.initializeApp(window.FIREBASE_CONFIG), ac = window.APP_CHECK || {};
+      if (ac.siteKey) {
+        const Prov = ac.provider === 'enterprise' ? m.ReCaptchaEnterpriseProvider : m.ReCaptchaV3Provider;
+        m.initializeAppCheck(app, {provider: new Prov(ac.siteKey), isTokenAutoRefreshEnabled: true});
+      }
+      const ai = m.getAI(app, {backend: new m.GoogleAIBackend()});
       const M = window.AI_MODELS || {}, tm = M.text || 'gemini-3.6-flash', im = M.image || 'gemini-3.1-flash-image';
       const jsonModel = m.getGenerativeModel(ai, {model: tm, generationConfig: {responseMimeType: 'application/json'}});
       const textModel = m.getGenerativeModel(ai, {model: tm});
@@ -1559,7 +1564,7 @@ async function initAI(){
       if (!batch.length) return;
       const parts = [`Transcribe en español, palabra por palabra, cada uno de los ${batch.length} audios adjuntos, en el mismo orden. No corrijas, no resumas y no inventes: si la persona repite una frase o se equivoca, escribe también la repetición tal cual, e incluye las muletillas (eh, mmm) como palabras sueltas. Usa puntuación normal. Si un audio no tiene voz, pon "". Responde SOLO con JSON: {"t": [exactamente ${batch.length} textos]}`];
       batch.forEach(b => parts.push({inlineData: {mimeType: 'audio/wav', data: b}}));
-      const r = await AI.json(parts), arr = Array.isArray(r) ? r : (r && r.t) || [];
+      const r = await withTimeout(AI.json(parts), 120000, 'Gemini no respondió a tiempo (App Check o conexión)'), arr = Array.isArray(r) ? r : (r && r.t) || [];
       for (let i = 0; i < batch.length; i++) out.push(String(arr[i] || ''));
       batch = []; size = 0;
     };
@@ -1568,8 +1573,11 @@ async function initAI(){
   };
   updateAIUI();
 }
+const withTimeout = (pr, ms, msg) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error(msg)), ms))]);
 function aiErrHint(e){
   const m = String((e && (e.message || e.code)) || e || '');
+  if (/a tiempo/.test(m)) return (window.APP_CHECK && window.APP_CHECK.siteKey) ? 'Gemini no respondió a tiempo; si tienes bloqueador de anuncios, desactívalo en esta página (bloquea reCAPTCHA)' : 'Gemini no respondió a tiempo; revisa tu conexión';
+  if (/app.?check|appCheck|recaptcha/i.test(m)) return (window.APP_CHECK && window.APP_CHECK.siteKey) ? 'Firebase rechazó el permiso de la app (App Check): revisa la clave de reCAPTCHA y que el dominio esté autorizado' : 'falta configurar la protección App Check (clave de reCAPTCHA) en el editor';
   if (/api.?key|API_KEY|403|permission|PERMISSION|not been used|disabled|SERVICE_DISABLED|firebasevertexai|firebaseml/i.test(m)) return 'falta activar AI Logic (Gemini Developer API) en Firebase';
   if (/404|not found|NOT_FOUND|model/i.test(m)) return 'el modelo de Gemini no está disponible';
   if (/429|quota|RESOURCE_EXHAUSTED|rate/i.test(m)) return 'se alcanzó el límite gratis de Gemini por ahora; intenta en unos minutos';
@@ -1578,7 +1586,7 @@ function aiErrHint(e){
 }
 $('testAI').onclick = async () => {
   const r = $('testAIres'); r.textContent = 'Probando…'; r.style.color = '';
-  try { const t = await AI.text('Responde solo con la palabra: listo'); r.textContent = '✔ Gemini responde bien' + (t ? '' : ''); r.style.color = 'var(--acc2)'; }
+  try { const t = await withTimeout(AI.text('Responde solo con la palabra: listo'), 25000, 'Gemini no respondió a tiempo (App Check o conexión)'); r.textContent = '✔ Gemini responde bien' + (t ? '' : ''); r.style.color = 'var(--acc2)'; }
   catch(e) { r.textContent = '✖ ' + aiErrHint(e); r.style.color = 'var(--bad)'; }
 };
 function updateAIUI(){
