@@ -20,7 +20,8 @@ window.FIREBASE_CONFIG = {
 };
 */
 // Modelos de Gemini (se pueden cambiar aquí sin tocar el editor).
-window.AI_MODELS = { text: 'gemini-3.6-flash', image: 'gemini-3.1-flash-image' };
+// text: lista en orden de preferencia; si uno está saturado o sin cupo, el editor usa el siguiente.
+window.AI_MODELS = { text: ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'], image: 'gemini-3.1-flash-image' };
 // Protección App Check (obligatoria en este proyecto para usar Gemini).
 // siteKey: la "clave del sitio" de reCAPTCHA que registraste en Firebase → App Check.
 // provider: 'v3' para reCAPTCHA v3, 'enterprise' para reCAPTCHA Enterprise.

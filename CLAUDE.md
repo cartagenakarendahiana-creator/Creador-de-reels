@@ -11,7 +11,7 @@ Dueño: Karen (creador de contenido, Colombia). Escribe y responde siempre en **
 
 ## Arquitectura (todo estático, sin build)
 - `index.html` — toda la app (HTML + CSS + JS en un solo archivo, IIFE).
-- `firebase-config.js` — `window.FIREBASE_CONFIG` (público) y `window.AI_MODELS` (`text: gemini-3.6-flash`, `image: gemini-3.1-flash-image`) y `window.APP_CHECK` (`provider: 'v3'|'enterprise'`, `siteKey` de reCAPTCHA).
+- `firebase-config.js` — `window.FIREBASE_CONFIG` (público) y `window.AI_MODELS` (`text`: lista de modelos en orden de preferencia, `image: gemini-3.1-flash-image`) y `window.APP_CHECK` (`provider: 'v3'|'enterprise'`, `siteKey` de reCAPTCHA).
 - `lib/firebase-ai.js` — SDK Firebase AI Logic empaquetado con esbuild firebase@13.3.0 (`initializeApp`, `getAI`, `getGenerativeModel`, `GoogleAIBackend`, `ResponseModality`, `initializeAppCheck`, `ReCaptchaV3Provider`, `ReCaptchaEnterpriseProvider`). App Check debe ir en el mismo paquete que AI.
 - `lib/mp4-muxer.js` — mp4-muxer 5.x empaquetado (exportación con WebCodecs).
 - `asr-worker.js` + `lib/transformers.min.js` + `lib/ort-wasm-simd-threaded.jsep.*` + `models/Xenova/whisper-tiny/` — reconocimiento de voz local (Whisper tiny, respaldo sin internet). Los archivos grandes están partidos en `.p0.wasm`/`.p1.wasm` y el worker los une con un `fetch` interceptado (`SPLITS`).
@@ -26,7 +26,8 @@ Dueño: Karen (creador de contenido, Colombia). Escribe y responde siempre en **
 
 ## Estado y pendientes (nov 2026)
 - **App Check está OBLIGATORIO** en el proyecto Firebase para AI Logic: sin token, Gemini responde 401 "Firebase App Check token is invalid" y el editor cae a Whisper local (causa de los subtítulos malos). El editor ya inicia App Check si `window.APP_CHECK.siteKey` tiene valor; Clave registrada en App Check como Fraud Defense (= reCAPTCHA Enterprise), por eso `provider: 'enterprise'` (con 'v3' Firebase responde "App not registered"). El navegador headless de Playwright recibe "App attestation failed" (lo trata como robot): la prueba real es en el navegador de Karen. Para probar en local sin reCAPTCHA: token de depuración (`self.FIREBASE_APPCHECK_DEBUG_TOKEN`) registrado en la consola, inyectado con Playwright, nunca en el repo.
-- **Gemini real NO verificado** con un video de Karen. Hay un botón "Probar conexión con la IA" en ✦ Auto. Si falla, revisar que AI Logic (Gemini Developer API) esté activado en Firebase y que el modelo exista.
+- **Gemini FUNCIONA** (18 nov 2026, verificado en producción con App Check + video de prueba con voz sintética). Plan gratis: `gemini-3.6-flash` y `gemini-3.8-flash` suelen dar 500 "high demand" o 429 de cupo; `gemini-2.5-flash` ya no existe para usuarios nuevos. Por eso `AI_MODELS.text` es una lista y `initAI` prueba en orden (`tryModels`, recuerda el último que sirvió; `AI.model` dice cuál respondió). `gemini-3.1-flash-lite` responde en ~5-10 s.
+- **Falta probar con un video real de Karen.** Hay un botón "Probar conexión con la IA" en ✦ Auto. Si falla, revisar que AI Logic (Gemini Developer API) esté activado en Firebase y que el modelo exista.
 - Karen reportó: subtítulos que no coincidían con su voz (probablemente cayó al modelo local) y video poco fluido (ya se cambió a exportación cuadro por cuadro). Confirmar con un video real.
 - La vista previa puede saltar un poco en los cortes (la exportación sale bien).
 - Caricatura con IA requiere plan Blaze en Firebase; sin Blaze se usa el filtro.
