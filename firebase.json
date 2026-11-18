@@ -11,7 +11,7 @@
     ],
     "headers": [
       {
-        "source": "@(firebase-config.js|asr-worker.js|lib/firebase-ai.js)",
+        "regex": "^/(index\\.html)?$",
         "headers": [
           {
             "key": "Cache-Control",
@@ -20,7 +20,7 @@
         ]
       },
       {
-        "source": "@(/|**/*.html)",
+        "regex": "^/(firebase-config\\.js|asr-worker\\.js|lib/firebase-ai\\.js)$",
         "headers": [
           {
             "key": "Cache-Control",
@@ -29,7 +29,7 @@
         ]
       },
       {
-        "source": "**/*.@(wasm|mjs|js)",
+        "source": "**/!(firebase-config|asr-worker|firebase-ai).@(wasm|mjs|js)",
         "headers": [
           {
             "key": "Cache-Control",
