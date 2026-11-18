@@ -752,7 +752,9 @@ function outAR(){
   return 9/16;
 }
 function outDims(){
-  const ar = outAR(), short = +S.edit.res;
+  // En celular y iPad se exporta en 720p: pesa menos y el dispositivo alcanza a dar todos los cuadros.
+  const phone = isMobile() || navigator.maxTouchPoints > 1;
+  const ar = outAR(), short = (phone && +S.edit.res > 720) ? 720 : +S.edit.res;
   let W, H; if (ar < 1) { W = short; H = short / ar; } else { H = short; W = short * ar; }
   return {W: Math.round(W/2)*2, H: Math.round(H/2)*2};
 }
