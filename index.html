@@ -763,7 +763,8 @@ function layoutStage(){
   const maxW = (wide ? vwr.clientWidth : window.innerWidth) - 24;
   let h = maxH, w = h * ar; if (w > maxW) { w = maxW; h = w / ar; }
   st.style.width = w + 'px'; st.style.height = h + 'px';
-  const dpr = Math.min(1.75, window.devicePixelRatio || 1);
+  // La vista previa usa menos píxeles en celular/iPad para que se mueva fluida (la exportación sale en calidad completa).
+  const dpr = Math.min(isMobile() ? 1.25 : 1.75, window.devicePixelRatio || 1);
   view.width = Math.round(w * dpr); view.height = Math.round(h * dpr);
   $('fmtPill').textContent = S.edit.format === 'original' ? 'Original' : S.edit.format;
 }
@@ -1012,6 +1013,7 @@ function drawBrand(ctx, W, H, ot){
 
 // ================= Bucle de vista previa =================
 let exporting = null, syncing = false, lastActiveId = null, tlProgrammatic = false;
+let lastTimeLabel = '';
 function loop(){
   if (mode !== 'none' && !exporting) {
     let t = curT();
@@ -1020,7 +1022,7 @@ function loop(){
     } else if (anim.playing && t >= anim.dur) { pause(); anim.t = anim.dur; }
     renderFrame(vctx, view.width, view.height, t);
     if (actx && isPlaying()) updateDuck(outTime(t), t);
-    $('time').innerHTML = `<b>${fmt(outTime(t))}</b> / ${fmtShort(outDur())}`;
+    const tlab = fmt(outTime(t)); if (tlab !== lastTimeLabel) { lastTimeLabel = tlab; $('time').innerHTML = `<b>${tlab}</b> / ${fmtShort(outDur())}`; }
     if (isPlaying() && !tlDragging) { const want = Math.round(t * pps); if (Math.abs(tl.scrollLeft - want) > 1) { tlProgrammatic = true; tl.scrollLeft = want; } }
     const ac = mode === 'video' ? activeCue(t) : null, id = ac ? ac.id : null;
     if (id !== lastActiveId) {
