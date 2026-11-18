@@ -24,4 +24,4 @@ window.AI_MODELS = { text: 'gemini-3.6-flash', image: 'gemini-3.1-flash-image' }
 // Protección App Check (obligatoria en este proyecto para usar Gemini).
 // siteKey: la "clave del sitio" de reCAPTCHA que registraste en Firebase → App Check.
 // provider: 'v3' para reCAPTCHA v3, 'enterprise' para reCAPTCHA Enterprise.
-window.APP_CHECK = { provider: 'v3', siteKey: '6LcqxiYuAAAAAMPFD0uPVD2A3xLzzPmo6fth_Tex' };
+window.APP_CHECK = { provider: 'enterprise', siteKey: '6LcqxiYuAAAAAMPFD0uPVD2A3xLzzPmo6fth_Tex' };
