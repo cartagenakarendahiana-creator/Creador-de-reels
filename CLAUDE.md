@@ -15,7 +15,7 @@ Dueño: Karen (creador de contenido, Colombia). Escribe y responde siempre en **
 - `lib/firebase-ai.js` — SDK Firebase AI Logic empaquetado con esbuild firebase@13.3.0 (`initializeApp`, `getAI`, `getGenerativeModel`, `GoogleAIBackend`, `ResponseModality`, `initializeAppCheck`, `ReCaptchaV3Provider`, `ReCaptchaEnterpriseProvider`). App Check debe ir en el mismo paquete que AI.
 - `lib/mp4-muxer.js` — mp4-muxer 5.x empaquetado (exportación con WebCodecs).
 - `asr-worker.js` + `lib/transformers.min.js` + `lib/ort-wasm-simd-threaded.jsep.*` + `models/Xenova/whisper-tiny/` — reconocimiento de voz local (Whisper tiny, respaldo sin internet). Los archivos grandes están partidos en `.p0.wasm`/`.p1.wasm` y el worker los une con un `fetch` interceptado (`SPLITS`).
-- `firebase.json`, `.firebaserc` — hosting.
+- `firebase.json`, `.firebaserc` — hosting. `firebase-config.js`, `lib/firebase-ai.js`, `asr-worker.js` y el HTML van con `no-cache`; el resto de JS/wasm se guarda 7 días. Si cambias `firebase-config.js` o `lib/firebase-ai.js`, sube también el `?v=N` con que `index.html` los carga (los iPad/Safari guardan copias viejas).
 
 ## Flujo principal (en `index.html`)
 1. Cargar video → `segs` (partes conservadas/cortadas sobre el tiempo del video original).

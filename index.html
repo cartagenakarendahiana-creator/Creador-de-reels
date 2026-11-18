@@ -543,7 +543,7 @@ a{color:var(--acc2)}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="firebase-config.js"></script>
+<script src="firebase-config.js?v=3"></script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
@@ -1536,7 +1536,7 @@ async function initAI(){
   if (window.__AI_MOCK) Object.assign(AI, window.__AI_MOCK);
   else if (!sampleFn && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey) {
     try {
-      const m = await import('./lib/firebase-ai.js');
+      const m = await import('./lib/firebase-ai.js?v=3');
       const app = m.initializeApp(window.FIREBASE_CONFIG), ac = window.APP_CHECK || {};
       if (ac.siteKey) {
         const Prov = ac.provider === 'enterprise' ? m.ReCaptchaEnterpriseProvider : m.ReCaptchaV3Provider;
