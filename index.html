@@ -338,6 +338,7 @@ a{color:var(--acc2)}
         <div class="row" style="margin-top:8px">
           <label class="btn">📂 Importar SRT<input type="file" id="srtFile" accept=".srt,.vtt,.txt" hidden></label>
           <button class="btn" id="copySrt">📋 Copiar SRT</button>
+          <button class="btn" id="dlSrt">⬇️ Subtítulos para CapCut (.srt)</button>
           <button class="btn danger" id="clearBtn">Borrar todo</button>
         </div>
         <div class="list" id="cues"></div>
@@ -1233,10 +1234,20 @@ $('srtFile').onchange = async e => {
   snap(); S.cues = out; sortCues(); persist(); renderCues(); toast(`${out.length} subtítulos importados`);
 };
 const srtTime = t => { const ms = Math.round(t*1000), h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000), s = Math.floor(ms%60000/1000), r = ms%1000; const p = (n,l=2)=>String(n).padStart(l,'0'); return `${p(h)}:${p(m)}:${p(s)},${p(r,3)}`; };
+function buildSrt(){
+  return S.cues.filter(c => { const s = segAt(c.start); return !s || s.keep; }).map((c,i)=>`${i+1}\n${srtTime(outTime(c.start))} --> ${srtTime(outTime(Math.max(c.start+0.1, c.end - 0.001)))}\n${c.text.trim()}\n`).join('\n');
+}
 $('copySrt').onclick = async () => {
   if (!S.cues.length) { toast('No hay subtítulos'); return; }
-  const srt = S.cues.filter(c => { const s = segAt(c.start); return !s || s.keep; }).map((c,i)=>`${i+1}\n${srtTime(outTime(c.start))} --> ${srtTime(outTime(Math.max(c.start+0.1, c.end - 0.001)))}\n${c.text.trim()}\n`).join('\n');
-  try { await navigator.clipboard.writeText(srt); toast('SRT copiado ✔'); } catch(e) { toast('No se pudo copiar'); }
+  try { await navigator.clipboard.writeText(buildSrt()); toast('SRT copiado ✔'); } catch(e) { toast('No se pudo copiar'); }
+};
+$('dlSrt').onclick = () => {
+  if (!S.cues.length) { toast('No hay subtítulos'); return; }
+  const blob = new Blob(['\ufeff' + buildSrt()], {type: 'application/x-subrip;charset=utf-8'});
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = 'subtitulos-capcut.srt'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast('Subtítulos listos: impórtalos en CapCut con "Subtítulos → Importar" ✔', 4500);
 };
 
 // ================= Voz: análisis =================
