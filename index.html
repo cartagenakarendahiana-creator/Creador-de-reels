@@ -571,7 +571,7 @@ const BGS = {shadow:'Sombra suave', stroke:'Borde fino', box:'Caja', none:'Nada'
 const ANIMS = {pop:'Pop', fade:'Suave', words:'Palabra por palabra', none:'Ninguna'};
 const HLS = {none:'Igual', dim:'Brillo', color:'Color'};
 const ZOOMS = {none:'Sin zoom', cortes:'Zoom en cortes', clave:'Zoom en palabras clave', lento:'Zoom lento'};
-const TRANS = {none:'Corte seco', zoom:'Zoom rápido', flash:'Destello', fade:'Fundido'};
+const TRANS = {dissolve:'Mezcla suave', none:'Corte seco', zoom:'Zoom rápido', flash:'Destello', fade:'Fundido'};
 const LOGOPOS = {tl:'↖ Arriba izq.', tr:'↗ Arriba der.', bl:'↙ Abajo izq.', br:'↘ Abajo der.'};
 const FILLERS = new Set(['eh','ehh','ehhh','eeh','eeeh','em','emm','emmm','mm','mmm','mmmm','hmm','hm','ah','ahh','um','uh','mhm','eem']);
 const LOOKS = {
@@ -605,7 +605,7 @@ let S = {
   script: '', src: 'video',
   auto: {silence:true, takes:true, subs:true, ai:true, fillers:true, enhance:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3, engine:'gemini'},
   brand: {logo:null, pos:'tr', size:14, op:0.9, cta:'', handle:''}, tpl: '',
-  edit: {zoom:'clave', trans:'zoom', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
+  edit: {zoom:'clave', trans:'dissolve', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
   anim: {theme:'violeta', cartoon:'caricatura', zoom:1.2, y:0, script:'', ai:true},
 };
 try {
@@ -978,15 +978,35 @@ function drawProgress(ctx, W, H, ot){
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(0, H - h, W, h);
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, H - h, W * Math.min(1, ot / D), h);
 }
+// Mezcla suave en cada corte (como CapCut): el último cuadro antes del corte se desvanece
+// sobre el primer cuadro después del corte. Así no hay salto brusco ni destello negro.
+const DISSOLVE_S = 0.25;
+let snapC = null, snapX = null;
+function dissolveVideo(ctx, W, H, t, ot){
+  let prevCut = -1; for (const p of cutPoints()) if (p <= ot + 1e-6) prevCut = p;
+  const dis = prevCut >= 0 && ot - prevCut < DISSOLVE_S;
+  drawVideoLayer(ctx, W, H, t, 1);
+  if (dis) {
+    if (snapC && snapC.width === W && snapC.height === H) {
+      ctx.save(); ctx.globalAlpha = 1 - (ot - prevCut) / DISSOLVE_S; ctx.drawImage(snapC, 0, 0, W, H); ctx.restore();
+    }
+  } else {
+    if (!snapC || snapC.width !== W || snapC.height !== H) { snapC = document.createElement('canvas'); snapC.width = W; snapC.height = H; snapX = snapC.getContext('2d'); }
+    snapX.drawImage(ctx.canvas, 0, 0, W, H);
+  }
+}
 function renderFrame(ctx, W, H, t){
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   if (mode === 'anim') { drawAnim(ctx, W, H, t); drawBrand(ctx, W, H, t); drawProgress(ctx, W, H, t); return; }
   const ot = outTime(t), tr = S.edit.trans;
-  let d = 9; if (tr !== 'none') for (const p of cutPoints()) d = Math.min(d, Math.abs(ot - p));
-  const near = d < 0.18 ? 1 - d / 0.18 : 0;
-  drawVideoLayer(ctx, W, H, t, tr === 'zoom' && near ? 1 + 0.1 * near : 1);
-  if (near && tr === 'flash') { ctx.fillStyle = `rgba(255,255,255,${0.55 * near})`; ctx.fillRect(0, 0, W, H); }
-  if (near && tr === 'fade') { ctx.fillStyle = `rgba(0,0,0,${0.85 * near})`; ctx.fillRect(0, 0, W, H); }
+  if (tr === 'dissolve') dissolveVideo(ctx, W, H, t, ot);
+  else {
+    let d = 9; if (tr !== 'none') for (const p of cutPoints()) d = Math.min(d, Math.abs(ot - p));
+    const near = d < 0.18 ? 1 - d / 0.18 : 0;
+    drawVideoLayer(ctx, W, H, t, tr === 'zoom' && near ? 1 + 0.1 * near : 1);
+    if (near && tr === 'flash') { ctx.fillStyle = `rgba(255,255,255,${0.55 * near})`; ctx.fillRect(0, 0, W, H); }
+    if (near && tr === 'fade') { ctx.fillStyle = `rgba(0,0,0,${0.85 * near})`; ctx.fillRect(0, 0, W, H); }
+  }
   if (!S.edit.noSubs) drawSubs(ctx, W, H, t);
   drawHook(ctx, W, H, ot);
   drawBrand(ctx, W, H, ot);
@@ -1979,7 +1999,7 @@ async function mixAudio(D){
       if (S.auto.enhance) { const hp = oc.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 85; const pr = oc.createBiquadFilter(); pr.type = 'peaking'; pr.frequency.value = 3200; pr.Q.value = 0.8; pr.gain.value = 3;
         const cp = oc.createDynamicsCompressor(); cp.threshold.value = -26; cp.knee.value = 8; cp.ratio.value = 3.5; cp.attack.value = 0.004; cp.release.value = 0.22; const mk = oc.createGain(); mk.gain.value = 1.5;
         hp.connect(pr); pr.connect(cp); cp.connect(mk); mk.connect(vg); inp = hp; }
-      let acc = 0; const f = 0.012;
+      let acc = 0; const f = 0.05;
       for (const sg of (kept().length ? kept() : [{start:0, end:vdur()}])) {
         const L = sg.end - sg.start; if (L <= 0.02) continue;
         const src = oc.createBufferSource(); src.buffer = videoAudioBuf; const g = oc.createGain(); src.connect(g); g.connect(inp);
