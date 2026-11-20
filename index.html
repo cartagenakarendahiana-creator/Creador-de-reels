@@ -475,6 +475,7 @@ a{color:var(--acc2)}
       <div class="card">
         <h3>Exportar</h3>
         <p class="sub" id="expInfo"></p>
+        <label class="row" style="gap:8px;align-items:center;margin:6px 0 10px;cursor:pointer"><input type="checkbox" id="noSubs"> <span>Sin subtítulos pegados (para terminar en CapCut)</span></label>
         <button class="btn white big" id="exportBtn">Crear video final</button>
         <p class="note" id="expNote">Se exporta cuadro por cuadro para que quede fluido. En el celular tarda más o menos el doble de lo que dura el video. <b>Deja la pantalla encendida y esta pestaña abierta.</b></p>
         <div id="exportBox" class="hidden">
@@ -986,7 +987,7 @@ function renderFrame(ctx, W, H, t){
   drawVideoLayer(ctx, W, H, t, tr === 'zoom' && near ? 1 + 0.1 * near : 1);
   if (near && tr === 'flash') { ctx.fillStyle = `rgba(255,255,255,${0.55 * near})`; ctx.fillRect(0, 0, W, H); }
   if (near && tr === 'fade') { ctx.fillStyle = `rgba(0,0,0,${0.85 * near})`; ctx.fillRect(0, 0, W, H); }
-  drawSubs(ctx, W, H, t);
+  if (!S.edit.noSubs) drawSubs(ctx, W, H, t);
   drawHook(ctx, W, H, ot);
   drawBrand(ctx, W, H, ot);
   drawProgress(ctx, W, H, ot);
@@ -2075,6 +2076,8 @@ async function exportSmooth(sup, W, H){
     video.muted = false; video.playbackRate = 1; exporting = null; $('exportBtn').disabled = false; $('exportBox').classList.add('hidden'); $('playBtn').textContent = '▶';
   }
 }
+$('noSubs').checked = !!S.edit.noSubs;
+$('noSubs').onchange = e => { S.edit.noSubs = e.target.checked; persist(); };
 $('exportBtn').onclick = async () => {
   if (mode === 'none') { toast('Primero carga un video o crea uno animado'); return; }
   pause();
