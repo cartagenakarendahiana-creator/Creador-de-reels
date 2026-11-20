@@ -328,6 +328,12 @@ a{color:var(--acc2)}
     <!-- TEXTO -->
     <div class="pane" id="pane-text">
       <div class="card">
+        <h3>Textos en el video</h3>
+        <p class="sub">Un texto que aparece en el momento que elijas. Mueve el video hasta ahí y toca "Agregar aquí".</p>
+        <div class="row"><button class="btn acc" id="addTxt">＋ Agregar texto aquí</button></div>
+        <div class="list" id="txtList" style="margin-top:8px"></div>
+      </div>
+      <div class="card">
         <h3>Subtítulos</h3>
         <p class="sub">Toca un bloque morado en la línea de tiempo para ir a él. Puedes poner un emoji a cada frase.</p>
         <div class="row">
@@ -604,7 +610,7 @@ let S = {
   videoVol: 1, voiceVol: 1,
   script: '', src: 'video',
   auto: {silence:true, takes:true, subs:true, ai:true, fillers:true, enhance:true, minGap:0.35, pad:0.12, sens:0.3, wpc:3, engine:'gemini'},
-  brand: {logo:null, pos:'tr', size:14, op:0.9, cta:'', handle:''}, tpl: '',
+  brand: {logo:null, pos:'tr', size:14, op:0.9, cta:'', handle:''}, tpl: '', texts: [],
   edit: {zoom:'clave', trans:'dissolve', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
   anim: {theme:'violeta', cartoon:'caricatura', zoom:1.2, y:0, script:'', ai:true},
 };
@@ -614,6 +620,7 @@ try {
     S.cues = sv.cues || []; if (sv.script) S.script = sv.script;
     for (const k of ['style','music','auto','edit','anim','brand']) if (sv[k]) Object.assign(S[k], sv[k]);
     if (sv.tpl) S.tpl = sv.tpl;
+    if (Array.isArray(sv.texts)) S.texts = sv.texts;
     if (sv.src) S.src = sv.src; if (sv.voiceVol != null) S.voiceVol = sv.voiceVol;
   }
 } catch(e){}
@@ -636,15 +643,19 @@ const vdur = () => (isFinite(video.duration) ? video.duration : 0);
 
 // ================= Tiempo del video final =================
 const kept = () => segs.filter(s => s.keep);
-function outDur(){ if (mode === 'anim') return anim.dur; return kept().reduce((a,s)=>a + (s.end - s.start), 0) || vdur(); }
+// Velocidad (0,5× / 1× / 2×) y pausa (congela el último cuadro) por parte del video.
+const segSpeed = s => (s && s.speed > 0 ? s.speed : 1);
+const segLen = s => (s.end - s.start) / segSpeed(s) + (s.pause > 0 ? s.pause : 0);
+const srcIn = (s, rel) => { const sp = segSpeed(s), P = (s.end - s.start) / sp; return rel >= P ? s.end - 0.001 : s.start + rel * sp; };
+function outDur(){ if (mode === 'anim') return anim.dur; return kept().reduce((a,s)=>a + segLen(s), 0) || vdur(); }
 function outTime(t){
   if (mode === 'anim') return t;
   if (!segs.length) return t;
   let acc = 0;
   for (const s of segs) {
     if (!s.keep) { if (t < s.end) return acc; continue; }
-    if (t < s.end) return acc + Math.max(0, t - s.start);
-    acc += s.end - s.start;
+    if (t < s.end) return acc + Math.max(0, t - s.start) / segSpeed(s);
+    acc += segLen(s);
   }
   return acc;
 }
@@ -667,7 +678,7 @@ function zoomAt(t){
   }
   return 1;
 }
-function cutPoints(){ const pts = [], k = kept(); let acc = 0; for (let i = 0; i < k.length - 1; i++) { acc += k[i].end - k[i].start; pts.push(acc); } return pts; }
+function cutPoints(){ const pts = [], k = kept(); let acc = 0; for (let i = 0; i < k.length - 1; i++) { acc += segLen(k[i]); pts.push(acc); } return pts; }
 
 // ================= Reloj unificado =================
 const anim = {t:0, playing:false, t0:0, dur:0, scenes:[]};
@@ -682,14 +693,17 @@ async function play(){
   const k = kept();
   if (video.ended || (k.length && video.currentTime >= k[k.length-1].end - 0.05)) video.currentTime = k.length ? k[0].start : 0;
   else { const s = segAt(video.currentTime); if (s && !s.keep) { const n = nextKeptAfter(video.currentTime); if (n) video.currentTime = n.start; } }
+  { const cs = segAt(video.currentTime); video.playbackRate = cs && cs.keep ? segSpeed(cs) : 1; holdFor = null; }
   try { await video.play(); } catch(e){ toast('No se pudo reproducir'); }
 }
+let holdFor = null, holdT = null;
 function pause(){
+  clearTimeout(holdT); holdT = null;
   if (mode === 'anim') { if (anim.playing) { anim.t = curT(); anim.playing = false; stopTracks(); } $('playBtn').textContent = '▶'; return; }
   video.pause();
 }
 function seek(t){
-  t = Math.max(0, t);
+  t = Math.max(0, t); clearTimeout(holdT); holdT = null; holdFor = null;
   if (mode === 'anim') { const was = anim.playing; if (was) pause(); anim.t = Math.min(t, anim.dur); if (was) play(); return; }
   video.currentTime = Math.min(t, vdur());
 }
@@ -957,6 +971,20 @@ function drawSubs(ctx, W, H, t){
   }
   ctx.restore();
 }
+function drawTexts(ctx, W, H, ot){
+  const list = S.texts || []; if (!list.length) return;
+  const base = Math.min(W, H), fs = base * 0.07;
+  for (const x of list) {
+    const a = ot - x.t; if (a < 0 || a > x.dur || !x.text) continue;
+    const al = Math.max(0, Math.min(1, a / 0.2, (x.dur - a) / 0.2));
+    const text = S.style.upper ? x.text.toLocaleUpperCase('es') : x.text;
+    ctx.save(); ctx.globalAlpha = al; ctx.font = fontCSS(S.style.font, fs); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round'; ctx.lineWidth = fs * 0.14; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+    const y = H * (x.y || 40) / 100;
+    ctx.strokeText(text, W / 2, y); ctx.fillStyle = '#ffffff'; ctx.fillText(text, W / 2, y);
+    ctx.restore();
+  }
+}
 function drawHook(ctx, W, H, ot){
   const e = S.edit, txt = (e.hook || '').trim(); if (!txt || ot > e.hookDur) return;
   const a = Math.min(1, ot / 0.25, (e.hookDur - ot) / 0.3), base = Math.min(W, H), fs = base * 0.056;
@@ -995,11 +1023,14 @@ function dissolveVideo(ctx, W, H, t, ot){
     snapX.drawImage(ctx.canvas, 0, 0, W, H);
   }
 }
+let frozenLayer = null; // cuadro congelado durante una pausa de exportación
+function captureLayer(t, W, H){ const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, W, H); drawVideoLayer(x, W, H, t, 1); return c; }
 function renderFrame(ctx, W, H, t){
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
   if (mode === 'anim') { drawAnim(ctx, W, H, t); drawBrand(ctx, W, H, t); drawProgress(ctx, W, H, t); return; }
   const ot = outTime(t), tr = S.edit.trans;
-  if (tr === 'dissolve') dissolveVideo(ctx, W, H, t, ot);
+  if (frozenLayer) ctx.drawImage(frozenLayer, 0, 0, W, H);
+  else if (tr === 'dissolve') dissolveVideo(ctx, W, H, t, ot);
   else {
     let d = 9; if (tr !== 'none') for (const p of cutPoints()) d = Math.min(d, Math.abs(ot - p));
     const near = d < 0.18 ? 1 - d / 0.18 : 0;
@@ -1008,6 +1039,7 @@ function renderFrame(ctx, W, H, t){
     if (near && tr === 'fade') { ctx.fillStyle = `rgba(0,0,0,${0.85 * near})`; ctx.fillRect(0, 0, W, H); }
   }
   if (!S.edit.noSubs) drawSubs(ctx, W, H, t);
+  drawTexts(ctx, W, H, ot);
   drawHook(ctx, W, H, ot);
   drawBrand(ctx, W, H, ot);
   drawProgress(ctx, W, H, ot);
@@ -1043,6 +1075,10 @@ function loop(){
     let t = curT();
     if (mode === 'video') {
       if (!video.paused && !syncing && segs.length) { const s = segAt(t); if (s && !s.keep) { const n = nextKeptAfter(t); if (n) { video.currentTime = n.start; t = n.start; } else video.pause(); } }
+      if (!video.paused && !syncing && segs.length) { const s = segAt(t); if (s && s.keep) {
+        const sp = segSpeed(s); if (video.playbackRate !== sp) video.playbackRate = sp;
+        if (s.pause > 0 && t >= s.end - 0.06 && holdFor !== s) { holdFor = s; video.pause(); clearTimeout(holdT);
+          holdT = setTimeout(() => { holdT = null; const n = nextKeptAfter(s.end); if (n) video.currentTime = n.start; video.play().catch(() => {}); }, s.pause * 1000); } } }
     } else if (anim.playing && t >= anim.dur) { pause(); anim.t = anim.dur; }
     renderFrame(vctx, view.width, view.height, t);
     if (actx && isPlaying()) updateDuck(outTime(t), t);
@@ -1530,7 +1566,7 @@ function applyCut(a, b, kind){
     const s = segs[i]; if (!s.keep || b <= s.start || a >= s.end) continue;
     const ca = Math.max(a, s.start), cb = Math.min(b, s.end); if (cb - ca < 0.05) continue;
     const parts = [];
-    if (ca - s.start > 0.08) parts.push({...s, end: ca});
+    if (ca - s.start > 0.08) parts.push({...s, end: ca, pause: 0});
     parts.push({start: ca, end: cb, keep: false, kind, text: kind === 'muletilla' ? '(muletilla)' : ''});
     if (s.end - cb > 0.08) parts.push({...s, start: cb});
     segs.splice(i, 1, ...parts); i += parts.length - 1; changed = true;
@@ -1547,13 +1583,21 @@ function renderSegs(){
     el.querySelector('.t').textContent = s.text || (s.keep ? '(parte del video)' : '(sin texto)');
     el.querySelector('.tg').onclick = () => { snap(); s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
     el.querySelector('.pv').onclick = () => seek(s.start + 0.01);
+    if (s.keep) {
+      const ops = document.createElement('div'); ops.style.cssText = 'margin-top:6px;display:flex;gap:6px;flex-wrap:wrap';
+      const sp = segSpeed(s), pz = s.pause > 0 ? s.pause : 0;
+      ops.innerHTML = `<button class="btn" style="padding:4px 9px;font-size:12px">⚡ ${sp === 1 ? 'Normal' : sp + '×'}</button><button class="btn" style="padding:4px 9px;font-size:12px">⏸ ${pz ? pz + ' s' : 'Sin pausa'}</button>`;
+      ops.children[0].onclick = () => { snap(); const o = [1, 2]; s.speed = o[(o.indexOf(sp) + 1) % o.length]; persist(); renderSegs(); buildTimeline(); };
+      ops.children[1].onclick = () => { snap(); const o = [0, 0.5, 1]; s.pause = o[(o.indexOf(pz) + 1) % o.length]; persist(); renderSegs(); buildTimeline(); };
+      el.querySelector('.mid').appendChild(ops);
+    }
     box.appendChild(el);
   });
 }
 $('splitBtn').onclick = () => {
   if (mode !== 'video' || !segs.length) return; const t = video.currentTime, s = segAt(t);
   if (!s || t - s.start < 0.1 || s.end - t < 0.1) { toast('Muévete un poco del borde'); return; }
-  snap(); segs.splice(segs.indexOf(s), 1, {...s, end: t}, {...s, start: t}); renderSegs(); buildTimeline(); toast('Dividido ✂️');
+  snap(); segs.splice(segs.indexOf(s), 1, {...s, end: t, pause: 0}, {...s, start: t}); renderSegs(); buildTimeline(); toast('Dividido ✂️');
 };
 $('toggleHereBtn').onclick = () => { if (mode !== 'video' || !segs.length) return; snap(); const s = segAt(video.currentTime); s.keep = !s.keep; if (!kept().length) { s.keep = true; toast('Debe quedar al menos una parte'); } renderSegs(); buildTimeline(); };
 $('resetCutsBtn').onclick = e => confirmTap(e.currentTarget, '¿Seguro?', () => { snap(); resetSegs(); renderSegs(); buildTimeline(); });
@@ -1972,7 +2016,19 @@ function pickMime(){
   return '';
 }
 const waitSeek = t => new Promise(r => { const h = () => { video.removeEventListener('seeked', h); r(); }; video.addEventListener('seeked', h); video.currentTime = t; setTimeout(r, 1500); });
-function srcOfOut(o){ if (mode === 'anim') return o; let acc = 0; for (const s of segs) { if (!s.keep) continue; const L = s.end - s.start; if (o < acc + L) return s.start + (o - acc); acc += L; } const k = kept(); return k.length ? k[k.length-1].end : o; }
+function srcOfOut(o){
+  if (mode === 'anim') return o;
+  let acc = 0;
+  for (const s of segs) {
+    if (!s.keep) continue;
+    const P = (s.end - s.start) / segSpeed(s);
+    if (o < acc + P) return s.start + (o - acc) * segSpeed(s);
+    acc += P;
+    if (o < acc + (s.pause || 0)) return s.end - 0.001;
+    acc += (s.pause || 0);
+  }
+  const k = kept(); return k.length ? k[k.length-1].end : o;
+}
 async function smoothSupport(W, H){
   if (!window.VideoEncoder || !window.AudioEncoder || !window.VideoFrame || !window.AudioData) return null;
   if (mode === 'video' && !video.requestVideoFrameCallback) return null;
@@ -2001,10 +2057,10 @@ async function mixAudio(D){
         hp.connect(pr); pr.connect(cp); cp.connect(mk); mk.connect(vg); inp = hp; }
       let acc = 0; const f = 0.05;
       for (const sg of (kept().length ? kept() : [{start:0, end:vdur()}])) {
-        const L = sg.end - sg.start; if (L <= 0.02) continue;
-        const src = oc.createBufferSource(); src.buffer = videoAudioBuf; const g = oc.createGain(); src.connect(g); g.connect(inp);
-        g.gain.setValueAtTime(0, acc); g.gain.linearRampToValueAtTime(1, acc + f); g.gain.setValueAtTime(1, Math.max(acc + f, acc + L - f)); g.gain.linearRampToValueAtTime(0, acc + L);
-        src.start(acc, sg.start, L); acc += L;
+        const sp = segSpeed(sg), P = (sg.end - sg.start) / sp, L = segLen(sg); if (P <= 0.02) { acc += L; continue; }
+        const src = oc.createBufferSource(); src.buffer = videoAudioBuf; src.playbackRate.value = sp; const g = oc.createGain(); src.connect(g); g.connect(inp);
+        g.gain.setValueAtTime(0, acc); g.gain.linearRampToValueAtTime(1, acc + f); g.gain.setValueAtTime(1, Math.max(acc + f, acc + P - f)); g.gain.linearRampToValueAtTime(0, acc + P);
+        src.start(acc, sg.start, sg.end - sg.start); acc += L;
       }
     }
   }
@@ -2055,15 +2111,16 @@ async function exportSmooth(sup, W, H){
       const rate = isMobile() ? 0.5 : 1; video.muted = true;
       for (const p of parts) {
         if (job.cancelled) break;
-        const pEndOut = pOut + (p.end - p.start);
+        const pEndOut = pOut + segLen(p); let freezeC = null;
         await waitSeek(p.start + 0.001);
         await new Promise(resolve => {
           let finished = false;
-          const emit = mt => { while (n < N) { const ot = n / fps; if (ot >= pEndOut - 1e-6) break; const st = p.start + (ot - pOut); if (st > mt + 0.5 / fps) break; encodeAt(st, ot); } };
+          const emit = mt => { while (n < N) { const ot = n / fps; if (ot >= pEndOut - 1e-6) break; const st = srcIn(p, ot - pOut); if (st > mt + 0.5 / fps) break; if (p.pause > 0 && ot - pOut >= (p.end - p.start) / segSpeed(p) - 1e-9 && freezeC) frozenLayer = freezeC; encodeAt(st, ot); frozenLayer = null; } };
           const end = () => { if (finished) return; finished = true; video.pause(); video.removeEventListener('ended', end); emit(p.end + 1); resolve(); };
           const onFrame = async (now, meta) => {
             if (finished) return;
             if (job.cancelled || encErr) { end(); return; }
+            if (p.pause > 0 && !freezeC && meta.mediaTime >= p.end - 0.5 / fps) freezeC = captureLayer(p.end - 0.001, W, H);
             emit(meta.mediaTime);
             showP(0.05 + 0.9 * n / N, `Creando cuadros… ${Math.round(n / N * 100)}% · ${fmtShort(n / fps)} / ${fmtShort(total)}`);
             if (n / fps >= pEndOut - 1e-6 || meta.mediaTime >= p.end - 0.5 / fps) { end(); return; }
@@ -2072,7 +2129,7 @@ async function exportSmooth(sup, W, H){
           };
           video.addEventListener('ended', end);
           emit(video.currentTime);
-          video.requestVideoFrameCallback(onFrame); video.playbackRate = rate; video.play().catch(end);
+          video.requestVideoFrameCallback(onFrame); video.playbackRate = rate * segSpeed(p); video.play().catch(end);
         });
         pOut = pEndOut;
       }
@@ -2096,6 +2153,28 @@ async function exportSmooth(sup, W, H){
     video.muted = false; video.playbackRate = 1; exporting = null; $('exportBtn').disabled = false; $('exportBox').classList.add('hidden'); $('playBtn').textContent = '▶';
   }
 }
+function renderTexts(){
+  const box = $('txtList'); if (!box) return; box.innerHTML = '';
+  const list = S.texts || [];
+  if (!list.length) { box.innerHTML = '<div class="empty">Sin textos todavía.</div>'; return; }
+  list.forEach((x, i) => {
+    const el = document.createElement('div'); el.className = 'seg'; el.style.cssText = 'display:block';
+    el.innerHTML = `<input class="txtin tx" style="margin:0 0 6px" placeholder="Escribe el texto"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="note" style="margin:0">Aparece a los</span><input class="txtin tt" type="number" step="0.1" min="0" style="width:80px;margin:0"><span class="note" style="margin:0">s, dura</span><select class="txtin dd" style="width:auto;margin:0"><option value="1">1 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option></select><button class="btn danger" style="padding:5px 9px;margin-left:auto">Quitar</button></div>`;
+    const tx = el.querySelector('.tx'), tt = el.querySelector('.tt'), dd = el.querySelector('.dd');
+    tx.value = x.text || ''; tt.value = (+x.t || 0).toFixed(1); dd.value = String(x.dur || 2);
+    tx.oninput = () => { x.text = tx.value; persist(); };
+    tt.onchange = () => { x.t = Math.max(0, +tt.value || 0); persist(); };
+    dd.onchange = () => { x.dur = +dd.value; persist(); };
+    el.querySelector('button').onclick = () => { S.texts.splice(i, 1); persist(); renderTexts(); };
+    box.appendChild(el);
+  });
+}
+$('addTxt').onclick = () => {
+  if (mode === 'none') { toast('Primero carga un video'); return; }
+  const ot = outTime(curT());
+  S.texts = S.texts || []; S.texts.push({id: newId(), text: 'Tu texto', t: Math.round(ot * 10) / 10, dur: 2, y: 40});
+  persist(); renderTexts(); toast('Texto agregado: escríbelo abajo ✔');
+};
 $('noSubs').checked = !!S.edit.noSubs;
 $('noSubs').onchange = e => { S.edit.noSubs = e.target.checked; persist(); };
 $('exportBtn').onclick = async () => {
@@ -2183,7 +2262,7 @@ $('saveBtn').onclick = async () => {
 };
 
 // ================= Inicio =================
-refreshKw(); loadLogo(); syncInputs(); renderCues(); renderSegs(); setSrc(S.src); layoutStage(); initAI(); updUndo();
+refreshKw(); loadLogo(); syncInputs(); renderCues(); renderSegs(); renderTexts(); setSrc(S.src); layoutStage(); initAI(); updUndo();
 if (!isMobile()) openPane('auto'); else setSheet(false);
 requestAnimationFrame(loop);
 })();
