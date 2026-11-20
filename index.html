@@ -614,6 +614,7 @@ let S = {
   edit: {zoom:'clave', trans:'dissolve', look:'natural', hook:'', hookDur:3, format:'9:16', fit:'blur', res:1080, progress:false},
   anim: {theme:'violeta', cartoon:'caricatura', zoom:1.2, y:0, script:'', ai:true},
 };
+let videoSig = '', savedSegs = null, savedSig = '';
 try {
   const sv = JSON.parse(localStorage.getItem('editorReels.v4')||'null') || JSON.parse(localStorage.getItem('editorReels.v3')||'null');
   if (sv) {
@@ -621,13 +622,15 @@ try {
     for (const k of ['style','music','auto','edit','anim','brand']) if (sv[k]) Object.assign(S[k], sv[k]);
     if (sv.tpl) S.tpl = sv.tpl;
     if (Array.isArray(sv.texts)) S.texts = sv.texts;
+    if (Array.isArray(sv.__segs)) { savedSegs = sv.__segs; savedSig = sv.__sig || ''; S.__segs = savedSegs; S.__sig = savedSig; }
     if (sv.src) S.src = sv.src; if (sv.voiceVol != null) S.voiceVol = sv.voiceVol;
   }
 } catch(e){}
 if (!FONTS[S.style.font]) S.style.font = 'Montserrat';
 if (!FORMATS[S.edit.format]) S.edit.format = '9:16';
 if (S.anim.cartoon === 'ia') S.anim.cartoon = 'caricatura';
-let saveT; function persist(){ clearTimeout(saveT); saveT = setTimeout(()=>{ try{ localStorage.setItem('editorReels.v4', JSON.stringify(S)); }catch(e){} }, 300); }
+let saveT; // Guarda también los cortes y, con una firma del video, se recuperan al volver a cargar el mismo archivo.
+function persist(){ clearTimeout(saveT); saveT = setTimeout(()=>{ try{ if (videoSig) { S.__segs = segs; S.__sig = videoSig; } localStorage.setItem('editorReels.v4', JSON.stringify(S)); }catch(e){} }, 300); }
 let uid = Date.now(); const newId = () => ++uid;
 S.cues.forEach(c => c.id = c.id || newId());
 
@@ -741,7 +744,7 @@ $('videoFile').onchange = e => {
   const f = e.target.files[0]; if (!f) return; e.target.value = '';
   if (anim.playing) pause();
   if (videoURL) URL.revokeObjectURL(videoURL);
-  videoFile = f; lastAnalysis = null; videoAudioBuf = null; videoAudioTried = false; videoName = f.name.replace(/\.[^.]+$/, '');
+  videoFile = f; videoSig = f.name + '|' + f.size; lastAnalysis = null; videoAudioBuf = null; videoAudioTried = false; videoName = f.name.replace(/\.[^.]+$/, '');
   videoURL = URL.createObjectURL(f); video.src = videoURL; video.load();
   setMode('video'); if (isMobile()) openPane('auto');
   $('result').classList.add('hidden'); $('autoResult').classList.add('hidden'); $('transcriptBox').classList.add('hidden'); $('aiCard').classList.add('hidden');
@@ -749,7 +752,10 @@ $('videoFile').onchange = e => {
 };
 video.addEventListener('loadedmetadata', () => {
   $('musicStart').max = Math.max(1, Math.floor(vdur()));
-  resetSegs(); renderSegs(); layoutStage(); buildTimeline(); makeThumbs(); updateFmtInfo(); renderStyleUI();
+  resetSegs();
+  if (savedSegs && videoSig && videoSig === savedSig && savedSegs.length && savedSegs.every(s => s.end > s.start && s.start >= 0 && s.end <= vdur() + 0.05)) { segs = savedSegs; toast('Recuperé tus cortes de la última vez ✔', 3500); }
+  savedSegs = null;
+  renderSegs(); layoutStage(); buildTimeline(); makeThumbs(); updateFmtInfo(); renderStyleUI();
 });
 video.addEventListener('error', () => { if (video.getAttribute('src')) toast('Este video no se pudo abrir en tu navegador. Prueba exportándolo como MP4.', 4500); });
 function setMode(m){
@@ -1574,6 +1580,7 @@ function applyCut(a, b, kind){
   return changed;
 }
 function renderSegs(){
+  persist();
   const box = $('segs'); box.innerHTML = '';
   if (segs.length <= 1 && segs.every(s => s.keep)) { box.innerHTML = '<div class="empty">Sin cortes todavía.</div>'; return; }
   segs.filter(s => s.kind !== 'silencio' || s.keep).forEach(s => {
