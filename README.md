@@ -5,7 +5,7 @@ Subes tu video y Claude lo edita solo: corta silencios, muletillas y tomas repet
 ## Cómo funciona
 
 1. Subes el video desde el celular.
-2. **ElevenLabs** pasa la voz a texto, con el tiempo exacto de cada palabra.
+2. **Whisper** (gratis, corre dentro de tu Firebase) pasa la voz a texto, con el tiempo exacto de cada palabra.
 3. **Claude** lee la transcripción y decide la edición.
 4. Un servidor en Firebase arma el video con ffmpeg (subtítulos con letra Poppins, zooms, música, voz nivelada a volumen de redes).
 5. Lo ves, lo descargas o le pides cambios.
@@ -24,18 +24,16 @@ Subes tu video y Claude lo edita solo: corta silencios, muletillas y tomas repet
 1. En Firebase: **Configuración ⚙ → Cuentas de servicio → Generar nueva clave privada**. Se descarga un archivo `.json`.
 2. En https://console.cloud.google.com/iam-admin/iam (con el mismo proyecto elegido), busca la cuenta que termina en `firebase-adminsdk-…` → lápiz → **Agregar rol → Propietario** → Guardar.
 
-### 3. Claves de Claude y ElevenLabs
-- **Claude**: https://console.anthropic.com → Billing → cargar saldo → **API Keys → Create Key**.
-- **ElevenLabs**: https://elevenlabs.io → tu perfil → **API Keys → Create** (con permiso de Speech to Text).
+### 3. Clave de Claude
+https://console.anthropic.com → Billing → cargar saldo → **API Keys → Create Key**.
 
-### 4. Guardar las 3 claves en GitHub
+### 4. Guardar las 2 claves en GitHub
 En el repo: **Settings → Secrets and variables → Actions → New repository secret**:
 
 | Nombre | Valor |
 |---|---|
 | `EDITOR_FIREBASE_SA` | todo el contenido del archivo `.json` del paso 2 |
 | `ANTHROPIC_API_KEY` | la clave de Claude (`sk-ant-…`) |
-| `ELEVENLABS_API_KEY` | la clave de ElevenLabs |
 
 ### 5. Publicar
 Ve a la pestaña **Actions** → "Publicar Editor con Claude" → **Re-run**. Al terminar, el editor queda en `https://TU-PROYECTO.web.app`.
@@ -44,9 +42,10 @@ Ve a la pestaña **Actions** → "Publicar Editor con Claude" → **Re-run**. Al
 
 ## Costos aproximados por video de 1 minuto
 - Claude (Sonnet): unos centavos de dólar.
-- ElevenLabs: menos de 1 minuto de tus créditos de transcripción.
+- Transcripción (Whisper): gratis, solo usa un poco de servidor.
 - Firebase: casi siempre dentro de la capa gratis.
 
 ## Límites actuales
 - Hasta 6 minutos por video.
 - Claude decide por la voz, no ve la imagen.
+- La transcripción tarda más o menos lo mismo que dura el video.

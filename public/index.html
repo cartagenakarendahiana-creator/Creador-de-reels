@@ -278,8 +278,8 @@ $('btn-go').onclick = async () => {
 };
 
 // ---------- lista ----------
-const WORK = ['subido', 'transcribiendo', 'editando', 'renderizar', 'renderizando'];
-const LABEL = { subido: 'En cola', transcribiendo: 'Escuchando', editando: 'Claude editando', renderizar: 'Armando video', renderizando: 'Armando video', listo: 'Listo', error: 'Error' };
+const WORK = ['subido', 'preparando', 'transcribir', 'planificar', 'editando', 'renderizar', 'renderizando'];
+const LABEL = { subido: 'En cola', preparando: 'Preparando', transcribir: 'Escuchando', planificar: 'Claude editando', editando: 'Claude editando', renderizar: 'Armando video', renderizando: 'Armando video', listo: 'Listo', error: 'Error' };
 
 function listenJobs() {
   if (unsubJobs) unsubJobs();
@@ -292,7 +292,7 @@ function listenJobs() {
         <div class="thumb">${j.status === 'listo' ? '▶' : WORK.includes(j.status) ? '✦' : '!'}</div>
         <div class="meta">
           <div class="title">${esc(j.plan?.title || j.name || 'Video')}</div>
-          <div class="status ${j.status === 'listo' ? 'listo' : j.status === 'error' ? 'error' : 'work'}">${LABEL[j.status] || j.status}${j.status === 'renderizando' && j.progress ? ' · ' + j.progress + '%' : ''}</div>
+          <div class="status ${j.status === 'listo' ? 'listo' : j.status === 'error' ? 'error' : 'work'}">${LABEL[j.status] || j.status}${['renderizando', 'transcribir'].includes(j.status) && j.progress ? ' · ' + j.progress + '%' : ''}</div>
         </div>
       </div>`).join('');
     document.querySelectorAll('.job').forEach((el) => el.onclick = () => openJob(el.dataset.id));
@@ -320,7 +320,7 @@ async function renderDetail(id, j) {
 
   let html = `<h2>${esc(j.plan?.title || j.name || 'Video')}</h2>`;
   if (working) {
-    const pct = j.status === 'renderizando' ? (j.progress || 0) : j.status === 'editando' ? 40 : j.status === 'transcribiendo' ? 15 : 5;
+    const pct = j.status === 'renderizando' ? 60 + (j.progress || 0) * 0.4 : ['editando', 'planificar', 'renderizar'].includes(j.status) ? 50 : j.status === 'transcribir' ? 8 + (j.progress || 0) * 0.4 : 4;
     html += `<div class="card"><div class="status work">${esc(j.step || LABEL[j.status])}</div><div class="bar"><i style="width:${pct}%"></i></div>
       <p class="sub" style="margin:12px 0 0">Puedes cerrar la app: el video se sigue editando y lo encuentras en "Mis videos".</p></div>`;
   }

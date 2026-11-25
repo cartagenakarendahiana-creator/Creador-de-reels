@@ -1,5 +1,5 @@
 // Editor con Claude — funciones en la nube.
-// Flujo: el navegador sube el video y crea jobs/{id} → transcribir → Claude hace el plan → render → listo.
+// Flujo: el navegador sube el video y crea jobs/{id} → preparar (audio) → Whisper (functions-py) → Claude hace el plan → render → listo.
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
@@ -14,7 +14,6 @@ import ffmpegPath from 'ffmpeg-static';
 import ffprobe from 'ffprobe-static';
 
 import { setBinaries, probe, extractAudio, renderVideo } from './lib/render.js';
-import { transcribe } from './lib/transcribe.js';
 import { makePlan, revisePlan } from './lib/claude.js';
 import { cleanWords } from './lib/timeline.js';
 
@@ -23,7 +22,6 @@ initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 3 });
 
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
-const ELEVENLABS_API_KEY = defineSecret('ELEVENLABS_API_KEY');
 
 const db = getFirestore();
 const bucket = () => getStorage().bucket();
@@ -74,46 +72,62 @@ function friendly(e) {
   return msg.length > 400 ? msg.slice(0, 400) + '…' : msg;
 }
 
-// ---------- 1. transcribir + plan de Claude ----------
+// ---------- 1. preparar: revisar el video y sacar el audio ----------
+// Luego la función de Python (functions-py) transcribe con Whisper y deja el video en "planificar".
 
-async function analyze(jobId, job) {
-  const work = await mkdtemp(path.join(tmpdir(), 'an-'));
+async function prepare(jobId, job) {
+  const work = await mkdtemp(path.join(tmpdir(), 'pr-'));
   try {
-    await setJob(jobId, { status: 'transcribiendo', step: 'Escuchando tu video…', error: FieldValue.delete() });
+    await setJob(jobId, { status: 'preparando', step: 'Preparando tu video…', error: FieldValue.delete() });
     const input = path.join(work, 'input');
     await bucket().file(job.inputPath).download({ destination: input });
     const info = await probe(input);
     if (info.duration > MAX_SECONDS) throw new Error(`El video dura ${Math.round(info.duration)} s. Por ahora el máximo es ${MAX_SECONDS / 60} minutos.`);
     if (!info.hasAudio) throw new Error('El video no tiene audio, así que no hay voz que editar.');
-
     const audio = await extractAudio(input, path.join(work, 'audio.mp3'));
-    const tr = await transcribe(audio, ELEVENLABS_API_KEY.value(), { language: job.language || 'es' });
-    await bucket().file(`jobs/${jobId}/transcript.json`).save(JSON.stringify(tr), { contentType: 'application/json' });
-
-    await setJob(jobId, { status: 'editando', step: 'Claude está editando…', duration: info.duration, info, transcriptText: tr.text.slice(0, 5000) });
-
-    const settings = await getSettings(job.uid);
-    const tracks = await tracksFor(job.uid, job);
-    const { plan, usage } = await makePlan({
-      apiKey: ANTHROPIC_API_KEY.value(), rawWords: tr.words, duration: info.duration,
-      settings, tracks, instructions: job.instructions, format: job.format,
-    });
-    logger.info('plan', { jobId, usage });
-    await setJob(jobId, { plan, status: 'renderizar', step: 'Armando el video…' });
+    await bucket().upload(audio, { destination: `jobs/${jobId}/audio.mp3`, contentType: 'audio/mpeg', resumable: false });
+    await setJob(jobId, { status: 'transcribir', step: 'Escuchando tu video…', duration: info.duration, info });
   } finally {
     await rm(work, { recursive: true, force: true });
   }
 }
 
 export const procesarVideo = onDocumentCreated(
-  { document: 'jobs/{jobId}', secrets: [ANTHROPIC_API_KEY, ELEVENLABS_API_KEY], timeoutSeconds: 540, memory: '2GiB', cpu: 1 },
+  { document: 'jobs/{jobId}', timeoutSeconds: 540, memory: '2GiB', cpu: 1 },
   async (event) => {
     const jobId = event.params.jobId;
     const job = event.data?.data();
     if (!job || job.status !== 'subido') return;
     try {
       if (!(await ensureOwner(job.uid))) throw new Error('Este editor es privado y pertenece a otra cuenta.');
-      await analyze(jobId, job);
+      await prepare(jobId, job);
+    } catch (e) {
+      logger.error(e);
+      await setJob(jobId, { status: 'error', error: friendly(e) });
+    }
+  },
+);
+
+// ---------- 1b. Claude hace el plan de edición ----------
+
+export const planificar = onDocumentUpdated(
+  { document: 'jobs/{jobId}', secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 300, memory: '512MiB' },
+  async (event) => {
+    const before = event.data.before.data();
+    const job = event.data.after.data();
+    if (job.status !== 'planificar' || before.status === 'planificar') return;
+    const jobId = event.params.jobId;
+    try {
+      await setJob(jobId, { status: 'editando', step: 'Claude está editando…' });
+      const tr = await loadTranscript(jobId);
+      const settings = await getSettings(job.uid);
+      const tracks = await tracksFor(job.uid, job);
+      const { plan, usage } = await makePlan({
+        apiKey: ANTHROPIC_API_KEY.value(), rawWords: tr.words, duration: job.duration,
+        settings, tracks, instructions: job.instructions, format: job.format,
+      });
+      logger.info('plan', { jobId, usage });
+      await setJob(jobId, { plan, status: 'renderizar', step: 'Armando el video…' });
     } catch (e) {
       logger.error(e);
       await setJob(jobId, { status: 'error', error: friendly(e) });
@@ -176,7 +190,7 @@ export const renderizar = onDocumentUpdated(
 // ---------- 3. pedirle cambios a Claude ----------
 
 export const pedirCambio = onCall(
-  { secrets: [ANTHROPIC_API_KEY, ELEVENLABS_API_KEY], timeoutSeconds: 540, memory: '1GiB' },
+  { secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 300, memory: '1GiB' },
   async (req) => {
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Inicia sesión.');
@@ -186,13 +200,20 @@ export const pedirCambio = onCall(
     if (!snap.exists || snap.data().uid !== uid) throw new HttpsError('not-found', 'No encontré ese video.');
     if (!(await ensureOwner(uid))) throw new HttpsError('permission-denied', 'Este editor es privado.');
     const job = snap.data();
-    if (['transcribiendo', 'editando', 'renderizando', 'renderizar'].includes(job.status)) {
+    if (['subido', 'preparando', 'transcribir', 'planificar', 'editando', 'renderizando', 'renderizar'].includes(job.status)) {
       throw new HttpsError('failed-precondition', 'Espera a que termine la versión actual.');
     }
 
     try {
-      // Sin plan todavía (falló antes): se repite todo el análisis.
-      if (!job.plan) { await analyze(jobId, job); return { ok: true }; }
+      // Sin plan todavía (falló antes): se retoma desde la etapa que falta.
+      if (!job.plan) {
+        const [hasTr] = await bucket().file(`jobs/${jobId}/transcript.json`).exists();
+        const [hasAudio] = await bucket().file(`jobs/${jobId}/audio.mp3`).exists();
+        if (hasTr) await setJob(jobId, { status: 'planificar', step: 'Claude está editando…', error: FieldValue.delete() });
+        else if (hasAudio && job.duration) await setJob(jobId, { status: 'transcribir', step: 'Escuchando tu video…', error: FieldValue.delete() });
+        else await prepare(jobId, job);
+        return { ok: true };
+      }
       const pedido = String(texto || '').trim();
       if (!pedido) { await setJob(jobId, { status: 'renderizar', step: 'Armando el video…' }); return { ok: true }; }
 

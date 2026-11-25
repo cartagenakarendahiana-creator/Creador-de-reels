@@ -1,5 +1,5 @@
 # Publica el Editor con Claude en Firebase cada vez que se sube un cambio a la rama editor-claude.
-# Necesita 3 secretos en GitHub (ver README): EDITOR_FIREBASE_SA, ANTHROPIC_API_KEY, ELEVENLABS_API_KEY
+# Necesita 2 secretos en GitHub (ver README): EDITOR_FIREBASE_SA y ANTHROPIC_API_KEY
 name: Publicar Editor con Claude
 on:
   push:
@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +22,6 @@ jobs:
           falta=""
           [ -z "$SA" ] && falta="$falta EDITOR_FIREBASE_SA"
           [ -z "$ANTHROPIC_API_KEY" ] && falta="$falta ANTHROPIC_API_KEY"
-          [ -z "$ELEVENLABS_API_KEY" ] && falta="$falta ELEVENLABS_API_KEY"
           if [ -n "$falta" ]; then echo "::error::Faltan estos secretos en GitHub:$falta"; exit 1; fi
           echo "PROJECT=$(echo "$SA" | jq -r .project_id)" >> "$GITHUB_ENV"
 
@@ -42,14 +40,20 @@ jobs:
             artifactregistry.googleapis.com run.googleapis.com eventarc.googleapis.com pubsub.googleapis.com \
             firestore.googleapis.com storage.googleapis.com firebasestorage.googleapis.com --project "$PROJECT"
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Instalar
         run: |
           npm ci --prefix functions
           npm i -g firebase-tools
+          python -m venv functions-py/venv
+          functions-py/venv/bin/pip install -q -r functions-py/requirements.txt
 
-      - name: Guardar claves de Claude y ElevenLabs (seguras, en Secret Manager)
+      - name: Guardar la clave de Claude (segura, en Secret Manager)
         run: |
-          for NAME in ANTHROPIC_API_KEY ELEVENLABS_API_KEY; do
+          for NAME in ANTHROPIC_API_KEY; do
             VAL="${!NAME}"
             CUR=$(firebase functions:secrets:access "$NAME" --project "$PROJECT" 2>/dev/null || true)
             if [ "$CUR" != "$VAL" ]; then
