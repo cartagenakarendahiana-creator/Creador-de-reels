@@ -1,0 +1,76 @@
+# Publica el Editor con Claude en Firebase cada vez que se sube un cambio a la rama editor-claude.
+# Necesita 3 secretos en GitHub (ver README): EDITOR_FIREBASE_SA, ANTHROPIC_API_KEY, ELEVENLABS_API_KEY
+name: Publicar Editor con Claude
+on:
+  push:
+    branches: [editor-claude]
+  workflow_dispatch:
+concurrency: editor-claude
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Revisar que estén las claves
+        env:
+          SA: ${{ secrets.EDITOR_FIREBASE_SA }}
+        run: |
+          falta=""
+          [ -z "$SA" ] && falta="$falta EDITOR_FIREBASE_SA"
+          [ -z "$ANTHROPIC_API_KEY" ] && falta="$falta ANTHROPIC_API_KEY"
+          [ -z "$ELEVENLABS_API_KEY" ] && falta="$falta ELEVENLABS_API_KEY"
+          if [ -n "$falta" ]; then echo "::error::Faltan estos secretos en GitHub:$falta"; exit 1; fi
+          echo "PROJECT=$(echo "$SA" | jq -r .project_id)" >> "$GITHUB_ENV"
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.EDITOR_FIREBASE_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Activar servicios de Google Cloud
+        run: |
+          gcloud services enable secretmanager.googleapis.com cloudfunctions.googleapis.com cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com run.googleapis.com eventarc.googleapis.com pubsub.googleapis.com \
+            firestore.googleapis.com storage.googleapis.com firebasestorage.googleapis.com --project "$PROJECT"
+
+      - name: Instalar
+        run: |
+          npm ci --prefix functions
+          npm i -g firebase-tools
+
+      - name: Guardar claves de Claude y ElevenLabs (seguras, en Secret Manager)
+        run: |
+          for NAME in ANTHROPIC_API_KEY ELEVENLABS_API_KEY; do
+            VAL="${!NAME}"
+            CUR=$(firebase functions:secrets:access "$NAME" --project "$PROJECT" 2>/dev/null || true)
+            if [ "$CUR" != "$VAL" ]; then
+              printf '%s' "$VAL" | firebase functions:secrets:set "$NAME" --data-file=- --project "$PROJECT" --non-interactive
+            fi
+          done
+
+      - name: Permitir descargas desde el editor (CORS)
+        run: |
+          for B in "$PROJECT.firebasestorage.app" "$PROJECT.appspot.com"; do
+            gcloud storage buckets update "gs://$B" --cors-file=cors.json --project "$PROJECT" && break || true
+          done
+
+      - name: Publicar (reintenta si es la primera vez)
+        run: |
+          for i in 1 2 3; do
+            firebase deploy --only hosting,functions,firestore,storage --project "$PROJECT" --non-interactive --force && exit 0
+            echo "Falló el intento $i; la primera publicación a veces necesita que Google termine de activar permisos. Reintento en 90 s…"
+            sleep 90
+          done
+          exit 1
+
+      - name: Dirección del editor
+        run: echo "::notice::Tu editor está en https://$PROJECT.web.app"
