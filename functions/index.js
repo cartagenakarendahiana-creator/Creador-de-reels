@@ -124,7 +124,7 @@ export const planificar = onDocumentUpdated(
       const tracks = await tracksFor(job.uid, job);
       const { plan, usage } = await makePlan({
         apiKey: ANTHROPIC_API_KEY.value(), rawWords: tr.words, duration: job.duration,
-        settings, tracks, instructions: job.instructions, format: job.format,
+        settings, tracks, instructions: job.instructions, format: job.format, quality: job.quality,
       });
       logger.info('plan', { jobId, usage });
       await setJob(jobId, { plan, status: 'renderizar', step: 'Armando el video…' });
@@ -223,7 +223,7 @@ export const pedirCambio = onCall(
       const tracks = await tracksFor(uid, job);
       const { plan } = await revisePlan({
         apiKey: ANTHROPIC_API_KEY.value(), rawWords: tr.words, duration: job.duration, settings, tracks,
-        instructions: job.instructions, format: job.format, previousPlan: job.plan, history: job.history || [], request: pedido,
+        instructions: job.instructions, format: job.format, quality: job.quality, previousPlan: job.plan, history: job.history || [], request: pedido,
       });
       await setJob(jobId, { plan, history: FieldValue.arrayUnion(pedido), status: 'renderizar', step: 'Armando el video…' });
       return { ok: true };

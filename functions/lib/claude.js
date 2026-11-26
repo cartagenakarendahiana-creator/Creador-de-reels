@@ -2,7 +2,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { STYLES } from './subtitles.js';
 
-export const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
+// Haiku por defecto (económico). Sonnet solo cuando se pide "calidad máxima".
+export const MODELS = { normal: 'claude-haiku-5-5', max: 'claude-sonnet-5-5' };
+const modelFor = (quality) => (quality === 'max' ? MODELS.max : MODELS.normal);
 
 const PLAN_TOOL = {
   name: 'plan_de_edicion',
@@ -105,15 +107,16 @@ function contextBlock({ duration, settings, tracks, instructions, format }) {
   return parts.join('\n\n');
 }
 
-async function callClaude(apiKey, messages) {
+async function callClaude(apiKey, messages, quality) {
   const client = new Anthropic({ apiKey });
   let res;
   try {
     res = await client.messages.create({
-      model: MODEL,
+      model: modelFor(quality),
       max_tokens: 16000,
-      system: SYSTEM,
-      tools: [PLAN_TOOL],
+      // Caché: las instrucciones fijas no se cobran completas en cada video.
+      system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+      tools: [{ ...PLAN_TOOL, cache_control: { type: 'ephemeral' } }],
       tool_choice: { type: 'tool', name: PLAN_TOOL.name },
       messages,
     });
@@ -127,15 +130,15 @@ async function callClaude(apiKey, messages) {
   return { plan: block.input, usage: res.usage };
 }
 
-export async function makePlan({ apiKey, rawWords, duration, settings, tracks, instructions, format }) {
+export async function makePlan({ apiKey, rawWords, duration, settings, tracks, instructions, format, quality }) {
   const content = `${contextBlock({ duration, settings, tracks, instructions, format })}\n\nTranscripción:\n${formatTranscript(rawWords)}`;
-  return callClaude(apiKey, [{ role: 'user', content }]);
+  return callClaude(apiKey, [{ role: 'user', content }], quality);
 }
 
-export async function revisePlan({ apiKey, rawWords, duration, settings, tracks, instructions, format, previousPlan, history, request }) {
+export async function revisePlan({ apiKey, rawWords, duration, settings, tracks, instructions, format, previousPlan, history, request, quality }) {
   const content = `${contextBlock({ duration, settings, tracks, instructions, format })}\n\nTranscripción:\n${formatTranscript(rawWords)}\n\n` +
     `Este es el plan que ya aplicaste:\n${JSON.stringify(previousPlan)}\n\n` +
     (history?.length ? `Cambios pedidos antes: ${history.map((h) => `"${h}"`).join(', ')}\n\n` : '') +
     `El creador ahora pide este cambio:\n"${request}"\n\nDevuelve el plan COMPLETO actualizado; cambia solo lo necesario para cumplir el pedido.`;
-  return callClaude(apiKey, [{ role: 'user', content }]);
+  return callClaude(apiKey, [{ role: 'user', content }], quality);
 }

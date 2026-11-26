@@ -109,6 +109,11 @@
       </div>
       <label class="t" style="margin-top:16px">Música</label>
       <select id="music-sel"></select>
+      <label class="t" style="margin-top:16px">Calidad de edición</label>
+      <div class="seg" id="seg-quality">
+        <button data-v="normal" class="on">Normal · económica</button>
+        <button data-v="max">Máxima · marcas</button>
+      </div>
       <label class="t" style="margin-top:16px">Instrucciones para Claude (opcional)</label>
       <textarea id="instr" placeholder="Ej: deja la parte del precio, corta lo de la entrada, gancho sobre el descuento…"></textarea>
     </div>
@@ -186,7 +191,7 @@ const fns = Fn.getFunctions(app, 'us-central1');
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-let user = null, file = null, format = 'vertical', unsubJobs = null, unsubDet = null, jobsCache = [];
+let user = null, file = null, format = 'vertical', quality = 'normal', unsubJobs = null, unsubDet = null, jobsCache = [];
 
 function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 2200); }
 
@@ -231,6 +236,11 @@ $('file').onchange = (e) => {
   $('drop-s').textContent = file ? (file.size / 1048576).toFixed(1) + ' MB' : 'Hasta 6 minutos';
   $('btn-go').disabled = !file;
 };
+$('seg-quality').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  quality = b.dataset.v;
+  [...$('seg-quality').children].forEach((x) => x.classList.toggle('on', x === b));
+};
 $('seg-format').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return;
   format = b.dataset.v;
@@ -264,7 +274,7 @@ $('btn-go').onclick = async () => {
     await task;
     await F.setDoc(jobRef, {
       uid: user.uid, status: 'subido', step: 'En cola…', inputPath: path, name: file.name,
-      format, music: $('music-sel').value, instructions: $('instr').value.trim(),
+      format, quality, music: $('music-sel').value, instructions: $('instr').value.trim(),
       createdAt: F.serverTimestamp(),
     });
     file = null; $('file').value = ''; $('instr').value = '';

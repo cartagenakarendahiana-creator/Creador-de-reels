@@ -11,3 +11,6 @@
 - Subtítulos: `lib/subtitles.js` genera .ass (Poppins en `functions/fonts`).
 - Para probar el render en local: `node` con un plan de ejemplo llamando a `renderVideo` (ver historial).
 - Preferencias editoriales: nada que suene a publicidad, no alargar, mejorar con cortes precisos.
+- Modelos: Haiku (`claude-haiku-5-5`) por defecto; Sonnet (`claude-sonnet-5-5`) si el video se sube con calidad "Máxima" (`job.quality === 'max'`). Caché de prompt activado. Karen tiene plan Pro y paga la API aparte: cuidar el costo.
+- Pendiente: modo "Animado" con Hyperframes (HTML → video) para subtítulos animados, ganchos y gráficos, después de probar el editor base con un video real.
+- Aún no probado con claves reales: Whisper (functions-py) y la llamada a Claude.

@@ -41,7 +41,7 @@ Ve a la pestaña **Actions** → "Publicar Editor con Claude" → **Re-run**. Al
 **La primera cuenta de Google que entre al editor queda como dueña.** Nadie más puede usarlo ni gastar tus créditos.
 
 ## Costos aproximados por video de 1 minuto
-- Claude (Sonnet): unos centavos de dólar.
+- Claude: Haiku por defecto (muy económico, 5 USD alcanzan para cientos de videos). Si eliges "Calidad máxima" usa Sonnet, que cuesta varias veces más.
 - Transcripción (Whisper): gratis, solo usa un poco de servidor.
 - Firebase: casi siempre dentro de la capa gratis.
 
